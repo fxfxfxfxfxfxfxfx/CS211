@@ -948,8 +948,6 @@ void Simulator::decode() {
   this->dRegNew.dest = dest;
   this->dRegNew.op1 = op1;
   this->dRegNew.op2 = op2;
-  if(insttype==ECALL)
-    printf("dreg:op2=%d\n",op2);
   this->dRegNew.op3=op3;
   this->dRegNew.offset = offset;
 }
@@ -979,8 +977,6 @@ void Simulator::excecute() {
   Inst inst = this->dReg.inst;
   int64_t op1 = this->dReg.op1;
   int64_t op2 = this->dReg.op2;
-  if(inst==ECALL)
-    printf("ex-dreg:op2=%d\n",op2);
   int64_t op3=this->dReg.op3;
   int64_t offset = this->dReg.offset;
   bool predictedBranch = this->dReg.predictedBranch;
@@ -1203,7 +1199,6 @@ void Simulator::excecute() {
     out = int64_t(int32_t((int32_t)op1 >> (int32_t)op2));
     break;
   case ECALL:
-    printf("ex:op1=%d,op2=%d\n",op1,op2);
     out = handleSystemCall(op1, op2);
     writeReg = true;
     break;
@@ -1310,6 +1305,7 @@ void Simulator::excecute() {
   if (writeReg && destReg != 0 && !isReadMem(inst)) {
     int flag=0;
     if (this->dRegNew.rs1 == destReg) {
+      // if(inst == ADDI)
       this->dRegNew.op1 = out;
       this->executeWBReg = destReg;
       this->executeWriteBack = true;
@@ -1495,12 +1491,6 @@ void Simulator::memoryAccess() {
   this->mRegNew.writeReg = writeReg;
   this->mRegNew.out = out;
 
-  // if(isWriteBackFreg(inst)) {
-  // if(inst == FSW || inst == FLW){
-  //   printf("************************memory*************************\n");
-  //   printf("inst = %d\neRegPC = %d\n, out = %x\n", inst, eRegPC, out);
-  //   printf("************************memory*************************\n");
-  // }
 }
 
 void Simulator::writeBack() {
@@ -1558,13 +1548,7 @@ void Simulator::writeBack() {
     }
 
     // Real Write Back
-    if(isWriteBackFreg(mReg.inst)){
-
-      this->reg[this->mReg.destReg] = this->mReg.out;
-    }
-    else{
-      this->reg[this->mReg.destReg] = this->mReg.out;
-    }
+    this->reg[this->mReg.destReg] = this->mReg.out;
   }
 
 }
@@ -1572,7 +1556,6 @@ void Simulator::writeBack() {
 int64_t Simulator::handleSystemCall(int64_t op1, int64_t op2) {
   int64_t type = op2; // reg a7
   int64_t arg1 = op1; // reg a0
-  printf("handle:op1=%d,op2=%d\n",op1,op2);
   union{
     int64_t i;
     float f;
@@ -1580,7 +1563,6 @@ int64_t Simulator::handleSystemCall(int64_t op1, int64_t op2) {
   arg2.i=arg1;
   switch (type) {
   case 0: { // print string
-    printf("hhhhhhhhhhhhhhhhhhhhhhhhhhhh\n");
     uint32_t addr = arg1;
     char ch = this->memory->getByte(addr);
     while (ch != '\0') {
@@ -1593,7 +1575,6 @@ int64_t Simulator::handleSystemCall(int64_t op1, int64_t op2) {
     printf("%c", (char)arg1);
     break;
   case 2: // print num
-    printf("dddddddddddddddddddddd\n");
     printf("%d", (int32_t)arg1);
     break;
   case 3:
