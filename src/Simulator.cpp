@@ -142,7 +142,6 @@ uint64_t getFloatOp(uint64_t a,uint64_t b,uint64_t c,int op){
     break;
   }
   tem1.f=fout;
-  // printf("myprint: %x\n",tem1.i);
   return tem1.i;
 }
 Simulator::Simulator(MemoryManager *memory, BranchPredictor *predictor) {
@@ -636,9 +635,15 @@ void Simulator::decode() {
     case OP_SYSTEM:
       if (funct3 == 0x0 && funct7 == 0x000) {
         instname = "ecall";
-        op1 = this->reg[REG_A0];
         op2 = this->reg[REG_A7];
-        reg1 = REG_A0;
+        if(op2==6){
+          op1 = this->freg[REG_FA0];
+          reg1=REG_FA0;
+        }
+        else {
+          op1 = this->reg[REG_A0];
+          reg1=REG_A0;
+        } 
         reg2 = REG_A7;
         dest = REG_A0;
         insttype = ECALL;
@@ -866,6 +871,12 @@ void Simulator::decode() {
       op2str = FREGNAME[rs2];
       offsetstr = std::to_string(offset);
       inststr = instname + " " + op2str + "," + offsetstr + "(" + op1str + ")";
+      // printf("------fswdecode------\n");
+      // printf("s0=%x\n",reg[8]);
+      // printf("op1=%x\n",op1);
+      // printf("offset=%x\n",offset);
+      // printf("op2=%x\n",op2);
+      // printf("------------\n");
       break;
     } 
     case OP_FMADD:{
@@ -947,6 +958,8 @@ void Simulator::decode() {
   this->dRegNew.dest = dest;
   this->dRegNew.op1 = op1;
   this->dRegNew.op2 = op2;
+  if(insttype==ECALL)
+    printf("dreg:op2=%d\n",op2);
   this->dRegNew.op3=op3;
   this->dRegNew.offset = offset;
 }
@@ -976,6 +989,8 @@ void Simulator::excecute() {
   Inst inst = this->dReg.inst;
   int64_t op1 = this->dReg.op1;
   int64_t op2 = this->dReg.op2;
+  if(inst==ECALL)
+    printf("ex-dreg:op2=%d\n",op2);
   int64_t op3=this->dReg.op3;
   int64_t offset = this->dReg.offset;
   bool predictedBranch = this->dReg.predictedBranch;
@@ -1177,7 +1192,6 @@ void Simulator::excecute() {
     writeReg = true;
     out = int64_t(int32_t(op1 << op2));
     break;
-    break;
   case SRLI:
   case SRL:
     writeReg = true;
@@ -1199,6 +1213,7 @@ void Simulator::excecute() {
     out = int64_t(int32_t((int32_t)op1 >> (int32_t)op2));
     break;
   case ECALL:
+    printf("ex:op1=%d,op2=%d\n",op1,op2);
     out = handleSystemCall(op1, op2);
     writeReg = true;
     break;
@@ -1249,10 +1264,9 @@ void Simulator::excecute() {
     readMem = true;
     writeReg = true;
     memLen = 4;
-    out = op1 + offset;
+    readSignExt = true;
     break;
   case FSW:
-    printf("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh\n");
     writeMem = true;
     memLen = 4;
     out = op1 + offset;
@@ -1262,12 +1276,6 @@ void Simulator::excecute() {
     this->panic("known instruction type %d\n", inst);
   }
 
-  // if(inst == FSW || inst == FLW){
-  // // if(isWriteBackFreg(inst)){
-  //   printf("************************execute**************************\n");
-  //   printf("inst = %d\neRegPC = %d\n, out = %x\n", inst, dReg.pc, out);
-  //   printf("************************execute**************************\n");
-  // }
 
   // Pipeline Related Code
   if (isBranch(inst)) {
@@ -1563,20 +1571,20 @@ void Simulator::writeBack() {
     }
   }
 
-  // if(isWriteBackFreg(mReg.inst)) {
-  // if(mReg.inst == FSW || mReg.inst == FLW){
-  //   printf("************************write**************************\n");
-  //   printf("inst = %d\neRegPC = %d\n, out = %x\n", mReg.inst, mReg.pc, mReg.out);
-  //   printf("************************write**************************\n");
-  // }
-  // this->pc = this->mReg.pc;
 }
 
 int64_t Simulator::handleSystemCall(int64_t op1, int64_t op2) {
   int64_t type = op2; // reg a7
   int64_t arg1 = op1; // reg a0
+  printf("handle:op1=%d,op2=%d\n",op1,op2);
+  union{
+    int64_t i;
+    float f;
+  }arg2;
+  arg2.i=arg1;
   switch (type) {
   case 0: { // print string
+    printf("hhhhhhhhhhhhhhhhhhhhhhhhhhhh\n");
     uint32_t addr = arg1;
     char ch = this->memory->getByte(addr);
     while (ch != '\0') {
@@ -1589,6 +1597,7 @@ int64_t Simulator::handleSystemCall(int64_t op1, int64_t op2) {
     printf("%c", (char)arg1);
     break;
   case 2: // print num
+    printf("dddddddddddddddddddddd\n");
     printf("%d", (int32_t)arg1);
     break;
   case 3:
@@ -1607,7 +1616,7 @@ int64_t Simulator::handleSystemCall(int64_t op1, int64_t op2) {
     scanf(" %ld", &op1);
     break;
   case 6: // print float
-    printf("%f", (float)arg1);
+    printf("%f\n", arg2.f);
     break;
   default:
     this->panic("Unknown syscall type %d\n", type);
