@@ -17,9 +17,9 @@
 
 namespace RISCV {
 
-const int REGNUM = 32;
-extern const char *REGNAME[32];
-extern const char *FREGNAME[32];
+const int REGNUM = 64;
+extern const char *REGNAME[64];
+
 typedef uint32_t RegId;
 enum Reg {
   REG_ZERO = 0,
@@ -54,41 +54,40 @@ enum Reg {
   REG_T4 = 29,
   REG_T5 = 30,
   REG_T6 = 31,
+  REG_FT0=32,
+  REG_FT1=33,
+  REG_FT2=34,
+  REG_FT3=35,
+  REG_FT4=36,
+  REG_FT5=37,
+  REG_FT6=38,
+  REG_FT7=39,
+  REG_FS0=40,
+  REG_FS1=41,
+  REG_FA0=42,
+  REG_FA1=43,
+  REG_FA2=44,
+  REG_FA3=45,
+  REG_FA4=46,
+  REG_FA5=47,
+  REG_FA6=48,
+  REG_FA7=49,
+  REG_FS2=50,
+  REG_FS3=51,
+  REG_FS4=52,
+  REG_FS5=53,
+  REG_FS6=54,
+  REG_FS7=55,
+  REG_FS8=56,
+  REG_FS9=57,
+  REG_FS10=58,
+  REG_FS11=59,
+  REG_FT8=60,
+  REG_FT9=61,
+  REG_FT10=62,
+  REG_FT11=63,
 };
-enum Freg{
-  REG_FT0=0,
-  REG_FT1=1,
-  REG_FT2=2,
-  REG_FT3=3,
-  REG_FT4=4,
-  REG_FT5=5,
-  REG_FT6=6,
-  REG_FT7=7,
-  REG_FS0=8,
-  REG_FS1=9,
-  REG_FA0=10,
-  REG_FA1=11,
-  REG_FA2=12,
-  REG_FA3=13,
-  REG_FA4=14,
-  REG_FA5=15,
-  REG_FA6=16,
-  REG_FA7=17,
-  REG_FS2=18,
-  REG_FS3=19,
-  REG_FS4=20,
-  REG_FS5=21,
-  REG_FS6=22,
-  REG_FS7=23,
-  REG_FS8=24,
-  REG_FS9=25,
-  REG_FS10=26,
-  REG_FS11=27,
-  REG_FT8=28,
-  REG_FT9=29,
-  REG_FT10=30,
-  REG_FT11=31,
-};
+
 enum InstType {
   R_TYPE,
   I_TYPE,
@@ -229,7 +228,6 @@ public:
   uint64_t predictedPC; // for branch prediction module, predicted PC destination
   uint64_t anotherPC; // // another possible prediction destination
   uint64_t reg[RISCV::REGNUM];
-  uint64_t freg[RISCV::REGNUM];
   uint32_t stackBase;
   uint32_t maximumStackSize;
   MemoryManager *memory;

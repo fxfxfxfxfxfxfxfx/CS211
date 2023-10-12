@@ -13,7 +13,7 @@
 
 namespace RISCV {
 
-const char *REGNAME[32] = {
+const char *REGNAME[64] = {
     "zero", // x0
     "ra",   // x1
     "sp",   // x2
@@ -46,40 +46,38 @@ const char *REGNAME[32] = {
     "t4",   // x29
     "t5",   // x30
     "t6",   // x31
-};
-const char *FREGNAME[32]={
-  "ft0",  // f0
-  "ft1",  // f1
-  "ft2",  // f2
-  "ft3",  // f3
-  "ft4",  // f4
-  "ft5",  // f5
-  "ft6",  // f6
-  "ft7",  // f7
-  "fs0",  // f8
-  "fs1",  // f9
-  "fa0",  // f10
-  "fa1",  // f11
-  "fa2",  // f12
-  "fa3",  // f13
-  "fa4",  // f14
-  "fa5",  // f15
-  "fa6",  // f16
-  "fa7",  // f17
-  "fs2",  // f18
-  "fs3",  // f19
-  "fs4",  // f20
-  "fs5",  // f21
-  "fs6",  // f22
-  "fs7",  // f23
-  "fs8",  // f24
-  "fs9",  // f25
-  "fs10", // f26
-  "fs11", // f27
-  "ft8",  // f28
-  "ft9",  // f29
-  "ft10", // f30
-  "ft11", // f31
+    "ft0",  // f0
+    "ft1",  // f1
+    "ft2",  // f2
+    "ft3",  // f3
+    "ft4",  // f4
+    "ft5",  // f5
+    "ft6",  // f6
+    "ft7",  // f7
+    "fs0",  // f8
+    "fs1",  // f9
+    "fa0",  // f10
+    "fa1",  // f11
+    "fa2",  // f12
+    "fa3",  // f13
+    "fa4",  // f14
+    "fa5",  // f15
+    "fa6",  // f16
+    "fa7",  // f17
+    "fs2",  // f18
+    "fs3",  // f19
+    "fs4",  // f20
+    "fs5",  // f21
+    "fs6",  // f22
+    "fs7",  // f23
+    "fs8",  // f24
+    "fs9",  // f25
+    "fs10", // f26
+    "fs11", // f27
+    "ft8",  // f28
+    "ft9",  // f29
+    "ft10", // f30
+    "ft11", // f31
 };
 const char *INSTNAME[]{
     "lui",  "auipc", "jal",   "jalr",  "beq",   "bne",  "blt",  "bge",  "bltu",
@@ -150,9 +148,6 @@ Simulator::Simulator(MemoryManager *memory, BranchPredictor *predictor) {
   this->pc = 0;
   for (int i = 0; i < REGNUM; ++i) {
     this->reg[i] = 0;
-  }
-  for (int i=0;i<REGNUM;++i){
-    this->freg[i]=0;
   }
 }
 
@@ -637,8 +632,9 @@ void Simulator::decode() {
         instname = "ecall";
         op2 = this->reg[REG_A7];
         if(op2==6){
-          op1 = this->freg[REG_FA0];
+          op1 = this->reg[REG_FA0];
           reg1=REG_FA0;
+          rs1+=32;
         }
         else {
           op1 = this->reg[REG_A0];
@@ -736,107 +732,107 @@ void Simulator::decode() {
       switch (funct7)
       {
       case 0x00: 
-        op1= this->freg[rs1];
-        op2= this->freg[rs2];
-        reg1=rs1;
-        reg2=rs2;
-        dest=rd;
+        op1= this->reg[rs1+32];
+        op2= this->reg[rs2+32];
+        reg1=rs1+32;
+        reg2=rs2+32;
+        dest=rd+32;
         instname="fadd.s";
         insttype=FADD_S;
-        op1str = FREGNAME[rs1];
-        op2str = FREGNAME[rs2];
-        deststr = FREGNAME[rd];
+        op1str = REGNAME[rs1+32];
+        op2str = REGNAME[rs2+32];
+        deststr = REGNAME[rd+32];
         break;
       case 0x04: 
-        op1= this->freg[rs1];
-        op2= this->freg[rs2];
-        reg1=rs1;
-        reg2=rs2;
-        dest=rd;
+        op1= this->reg[rs1+32];
+        op2= this->reg[rs2+32];
+        reg1=rs1+32;
+        reg2=rs2+32;
+        dest=rd+32;
         instname="fsub.s"; 
         insttype=FSUB_S;
-        op1str = FREGNAME[rs1];
-        op2str = FREGNAME[rs2];
-        deststr = FREGNAME[rd];
+        op1str = REGNAME[rs1+32];
+        op2str = REGNAME[rs2+32];
+        deststr = REGNAME[rd+32];
         break;
       case 0x08:
-        op1= this->freg[rs1];
-        op2= this->freg[rs2];
-        reg1=rs1;
-        reg2=rs2;
-        dest=rd;
+        op1= this->reg[rs1+32];
+        op2= this->reg[rs2+32];
+        reg1=rs1+32;
+        reg2=rs2+32;
+        dest=rd+32;
         instname="fmul.s";
         insttype=FMUL_S;
-        op1str = FREGNAME[rs1];
-        op2str = FREGNAME[rs2];
-        deststr = FREGNAME[rd];
+        op1str = REGNAME[rs1+32];
+        op2str = REGNAME[rs2+32];
+        deststr = REGNAME[rd+32];
         break;
       case 0x0c:
-        op1= this->freg[rs1];
-        op2= this->freg[rs2];
-        reg1=rs1;
-        reg2=rs2;
-        dest=rd;
+        op1= this->reg[rs1+32];
+        op2= this->reg[rs2]+32;
+        reg1=rs1+32;
+        reg2=rs2+32;
+        dest=rd+32;
         instname="fdiv.s";
         insttype=FDIV_S;
-        op1str = FREGNAME[rs1];
-        op2str = FREGNAME[rs2];
-        deststr = FREGNAME[rd];
+        op1str = REGNAME[rs1+32];
+        op2str = REGNAME[rs2+32];
+        deststr = REGNAME[rd+32];
         break;
       case 0x2c:
-        op1= this->freg[rs1];
-        op2= this->freg[rs2];
-        reg1=rs1;
-        reg2=rs2;
-        dest=rd;
+        op1= this->reg[rs1+32];
+        op2= this->reg[rs2+32];
+        reg1=rs1+32;
+        reg2=rs2+32;
+        dest=rd+32;
         instname="fsqrt.s";
         insttype=FSQRT_S;
-        op1str = FREGNAME[rs1];
-        op2str = FREGNAME[rs2];
-        deststr = FREGNAME[rd];
+        op1str = REGNAME[rs1]+32;
+        op2str = REGNAME[rs2+32];
+        deststr = REGNAME[rd+32];
         break;
       case 0x78:
         op1= this->reg[rs1];
         reg1=rs1;
         reg2=rs2;
-        dest=rd;
+        dest=rd+32;
         instname="fmv.w.x";
         insttype=FMV_W_X;
-        op1str = FREGNAME[rs1];
-        op2str = FREGNAME[rs2];
-        deststr = REGNAME[rd];
+        op1str = REGNAME[rs1];
+        op2str = REGNAME[rs2];
+        deststr = REGNAME[rd+32];
         break;
       case 0x70:
-        op1= this->freg[rs1];
-        reg1=rs1;
+        op1= this->reg[rs1+32];
+        reg1=rs1+32;
         reg2=rs2;
         dest=rd;
         instname="fmv.x.w";
         insttype=FMV_X_W;
-        op1str = REGNAME[rs1];
-        op2str = FREGNAME[rs2];
-        deststr = FREGNAME[rd];
+        op1str = REGNAME[rs1+32];
+        op2str = REGNAME[rs2];
+        deststr = REGNAME[rd];
         break;
       case 0x68:
         op1= this->reg[rs1];
         reg1=rs1;
         reg2=rs2;
-        dest=rd;
+        dest=rd+32;
         instname="fcvt.s.w";
         insttype=FCVT_S_W;
         op1str = REGNAME[rs1];
-        op2str = FREGNAME[rs2];
-        deststr = FREGNAME[rd];
+        op2str = REGNAME[rs2];
+        deststr = REGNAME[rd+32];
         break;
       case 0x60:
-        op1= this->freg[rs1];
-        reg1=rs1;
+        op1= this->reg[rs1+32];
+        reg1=rs1+32;
         reg2=rs2;
         dest=rd;
         instname="fcvt.w.s";
         insttype=FCVT_W_S;
-        op1str = FREGNAME[rs1];
-        op2str = FREGNAME[rs2];
+        op1str = REGNAME[rs1+32];
+        op2str = REGNAME[rs2];
         deststr = REGNAME[rd];
         break;
       default:
@@ -851,65 +847,59 @@ void Simulator::decode() {
       reg1=rs1;
       op2=imm_i;
       offset=imm_i;
-      dest=rd;
+      dest=rd+32;
       instname="flw";
       insttype=FLW;
       op1str = REGNAME[rs1];
       op2str = std::to_string(op2);
-      deststr = FREGNAME[rd];
+      deststr = REGNAME[rd+32];
       inststr = instname + " " + deststr + "," + op2str + "(" + op1str + ")";
       break;
     case OP_FSTORE:{
       op1=this->reg[rs1];
-      op2=this->freg[rs2];
+      op2=this->reg[rs2+32];
       reg1=rs1;
-      reg2=rs2;
+      reg2=rs2+32;
       offset=imm_s;
       instname="fsw";
       insttype=FSW;
       op1str = REGNAME[rs1];
-      op2str = FREGNAME[rs2];
+      op2str = REGNAME[rs2+32];
       offsetstr = std::to_string(offset);
       inststr = instname + " " + op2str + "," + offsetstr + "(" + op1str + ")";
-      // printf("------fswdecode------\n");
-      // printf("s0=%x\n",reg[8]);
-      // printf("op1=%x\n",op1);
-      // printf("offset=%x\n",offset);
-      // printf("op2=%x\n",op2);
-      // printf("------------\n");
       break;
     } 
     case OP_FMADD:{
-      op1= this->freg[rs1];
-      op2= this->freg[rs2];
-      op3=this->freg[rs3];
-      reg1=rs1;
-      reg2=rs2;
-      reg3=rs3;
-      dest=rd;
+      op1= this->reg[rs1+32];
+      op2= this->reg[rs2+32];
+      op3=this->reg[rs3+32];
+      reg1=rs1+32;
+      reg2=rs2+32;
+      reg3=rs3+32;
+      dest=rd+32;
       instname="fmadd.s";
       insttype=FMADD_S;
-      op1str = FREGNAME[rs1];
-      op2str = FREGNAME[rs2];
-      op3str =FREGNAME[rs3];
-      deststr = FREGNAME[rd];
+      op1str = REGNAME[rs1+32];
+      op2str = REGNAME[rs2+32];
+      op3str =REGNAME[rs3+32];
+      deststr = REGNAME[rd+32];
       inststr = instname + " " + deststr + "," + op1str + "," + op2str+","+op3str;
       break;
     } 
     case OP_FMSUB:{
-      op1= this->freg[rs1];
-      op2= this->freg[rs2];
-      op3=this->freg[rs3];
-      reg1=rs1;
-      reg2=rs2;
-      reg3=rs3;
-      dest=rd;
+      op1= this->reg[rs1+32];
+      op2= this->reg[rs2+32];
+      op3=this->reg[rs3+32];
+      reg1=rs1+32;
+      reg2=rs2+32;
+      reg3=rs3+32;
+      dest=rd+32;
       instname="fmsub.s";
       insttype=FMSUB_S;
-      op1str = FREGNAME[rs1];
-      op2str = FREGNAME[rs2];
-      op3str =FREGNAME[rs3];
-      deststr = FREGNAME[rd];
+      op1str = REGNAME[rs1+32];
+      op2str = REGNAME[rs2+32];
+      op3str =REGNAME[rs3+32];
+      deststr = REGNAME[rd+32];
       inststr = instname + " " + deststr + "," + op1str + "," + op2str+","+op3str;
       break;
     } 
@@ -1318,6 +1308,7 @@ void Simulator::excecute() {
 
   // Check for data hazard and forward data
   if (writeReg && destReg != 0 && !isReadMem(inst)) {
+    int flag=0;
     if (this->dRegNew.rs1 == destReg) {
       this->dRegNew.op1 = out;
       this->executeWBReg = destReg;
@@ -1327,6 +1318,7 @@ void Simulator::excecute() {
         printf("  Forward Data %s to Decode op1\n", REGNAME[destReg]);
     }
     if (this->dRegNew.rs2 == destReg) {
+      flag=1;
       this->dRegNew.op2 = out;
       this->executeWBReg = destReg;
       this->executeWriteBack = true;
@@ -1334,6 +1326,10 @@ void Simulator::excecute() {
       if (verbose)
         printf("  Forward Data %s to Decode op2\n", REGNAME[destReg]);
     }
+    if(dRegNew.inst==ECALL && out==6 && flag==1){
+      this->dRegNew.op1=reg[REG_FA0];
+    }
+    flag=0;
   }
 
   this->eRegNew.bubble = false;
@@ -1564,7 +1560,7 @@ void Simulator::writeBack() {
     // Real Write Back
     if(isWriteBackFreg(mReg.inst)){
 
-      this->freg[this->mReg.destReg] = this->mReg.out;
+      this->reg[this->mReg.destReg] = this->mReg.out;
     }
     else{
       this->reg[this->mReg.destReg] = this->mReg.out;
@@ -1627,18 +1623,13 @@ int64_t Simulator::handleSystemCall(int64_t op1, int64_t op2) {
 void Simulator::printInfo() {
   printf("------------ CPU STATE ------------\n");
   printf("PC: 0x%lx\n", this->pc);
-  for (uint32_t i = 0; i < 32; ++i) {
+  for (uint32_t i = 0; i < 64; ++i) {
     printf("%s: 0x%.8lx(%ld) ", REGNAME[i], this->reg[i], this->reg[i]);
     if (i % 4 == 3)
       printf("\n");
   }
   printf("***********************************\n");
-  for (uint32_t i = 0; i < 32; ++i) {
-    printf("%s: 0x%.8lx(%ld) ", FREGNAME[i], this->freg[i], this->freg[i]);
-    if (i % 4 == 3)
-      printf("\n");
-  }
-  printf("-----------------------------------\n");
+
 }
 
 void Simulator::printStatistics() {
