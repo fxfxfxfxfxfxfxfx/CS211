@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/baichuan/ca2/fengxiao-RISCV-Simulator
+CMAKE_SOURCE_DIR = /home/fxiao/CS211/lab0/cs211_lab0/CS211
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/baichuan/ca2/fengxiao-RISCV-Simulator/build
+CMAKE_BINARY_DIR = /home/fxiao/CS211/lab0/cs211_lab0/CS211/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/CacheOptimized.dir/depend.make
@@ -72,44 +72,44 @@ include CMakeFiles/CacheOptimized.dir/flags.make
 CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.o: CMakeFiles/CacheOptimized.dir/flags.make
 CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.o: ../src/MainCacheOptimization.cpp
 CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.o: CMakeFiles/CacheOptimized.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.o -MF CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.o.d -o CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.o -c /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MainCacheOptimization.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.o -MF CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.o.d -o CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.o -c /home/fxiao/CS211/lab0/cs211_lab0/CS211/src/MainCacheOptimization.cpp
 
 CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MainCacheOptimization.cpp > CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/fxiao/CS211/lab0/cs211_lab0/CS211/src/MainCacheOptimization.cpp > CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.i
 
 CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MainCacheOptimization.cpp -o CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/fxiao/CS211/lab0/cs211_lab0/CS211/src/MainCacheOptimization.cpp -o CMakeFiles/CacheOptimized.dir/src/MainCacheOptimization.cpp.s
 
 CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.o: CMakeFiles/CacheOptimized.dir/flags.make
 CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.o: ../src/MemoryManager.cpp
 CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.o: CMakeFiles/CacheOptimized.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.o -MF CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.o.d -o CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.o -c /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MemoryManager.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.o -MF CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.o.d -o CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.o -c /home/fxiao/CS211/lab0/cs211_lab0/CS211/src/MemoryManager.cpp
 
 CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MemoryManager.cpp > CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/fxiao/CS211/lab0/cs211_lab0/CS211/src/MemoryManager.cpp > CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.i
 
 CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MemoryManager.cpp -o CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/fxiao/CS211/lab0/cs211_lab0/CS211/src/MemoryManager.cpp -o CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.s
 
 CMakeFiles/CacheOptimized.dir/src/Cache.cpp.o: CMakeFiles/CacheOptimized.dir/flags.make
 CMakeFiles/CacheOptimized.dir/src/Cache.cpp.o: ../src/Cache.cpp
 CMakeFiles/CacheOptimized.dir/src/Cache.cpp.o: CMakeFiles/CacheOptimized.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/CacheOptimized.dir/src/Cache.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CacheOptimized.dir/src/Cache.cpp.o -MF CMakeFiles/CacheOptimized.dir/src/Cache.cpp.o.d -o CMakeFiles/CacheOptimized.dir/src/Cache.cpp.o -c /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/Cache.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/CacheOptimized.dir/src/Cache.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CacheOptimized.dir/src/Cache.cpp.o -MF CMakeFiles/CacheOptimized.dir/src/Cache.cpp.o.d -o CMakeFiles/CacheOptimized.dir/src/Cache.cpp.o -c /home/fxiao/CS211/lab0/cs211_lab0/CS211/src/Cache.cpp
 
 CMakeFiles/CacheOptimized.dir/src/Cache.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/CacheOptimized.dir/src/Cache.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/Cache.cpp > CMakeFiles/CacheOptimized.dir/src/Cache.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/fxiao/CS211/lab0/cs211_lab0/CS211/src/Cache.cpp > CMakeFiles/CacheOptimized.dir/src/Cache.cpp.i
 
 CMakeFiles/CacheOptimized.dir/src/Cache.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/CacheOptimized.dir/src/Cache.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/Cache.cpp -o CMakeFiles/CacheOptimized.dir/src/Cache.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/fxiao/CS211/lab0/cs211_lab0/CS211/src/Cache.cpp -o CMakeFiles/CacheOptimized.dir/src/Cache.cpp.s
 
 # Object files for target CacheOptimized
 CacheOptimized_OBJECTS = \
@@ -125,7 +125,7 @@ CacheOptimized: CMakeFiles/CacheOptimized.dir/src/MemoryManager.cpp.o
 CacheOptimized: CMakeFiles/CacheOptimized.dir/src/Cache.cpp.o
 CacheOptimized: CMakeFiles/CacheOptimized.dir/build.make
 CacheOptimized: CMakeFiles/CacheOptimized.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable CacheOptimized"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable CacheOptimized"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/CacheOptimized.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -137,6 +137,6 @@ CMakeFiles/CacheOptimized.dir/clean:
 .PHONY : CMakeFiles/CacheOptimized.dir/clean
 
 CMakeFiles/CacheOptimized.dir/depend:
-	cd /home/baichuan/ca2/fengxiao-RISCV-Simulator/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/baichuan/ca2/fengxiao-RISCV-Simulator /home/baichuan/ca2/fengxiao-RISCV-Simulator /home/baichuan/ca2/fengxiao-RISCV-Simulator/build /home/baichuan/ca2/fengxiao-RISCV-Simulator/build /home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles/CacheOptimized.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/fxiao/CS211/lab0/cs211_lab0/CS211/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/fxiao/CS211/lab0/cs211_lab0/CS211 /home/fxiao/CS211/lab0/cs211_lab0/CS211 /home/fxiao/CS211/lab0/cs211_lab0/CS211/build /home/fxiao/CS211/lab0/cs211_lab0/CS211/build /home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles/CacheOptimized.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/CacheOptimized.dir/depend
 

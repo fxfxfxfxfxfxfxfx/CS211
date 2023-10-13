@@ -209,13 +209,7 @@ inline bool isReadMem(Inst inst) {
   }
   return false;
 }
-inline bool isWriteBackFreg(Inst inst){
-  if (inst==FMV_W_X||inst==FCVT_S_W||inst==FLW||inst==FADD_S||inst==FSUB_S||
-      inst==FMUL_S||inst==FDIV_S||inst==FSQRT_S||inst==FMADD_S||inst==FMSUB_S){
-    return true;    
-    }
-  return false;
-}
+
 
 } // namespace RISCV
 
@@ -369,11 +363,12 @@ private:
         /* When using the instructions below,
            ALU for memory address calculation is used */
         case SB:   case SH:  case SW:    case SD:
+        case FSW:
           return memCalc; break;
         /* When using the instructions below,
            datamem is used */
         case LB:   case LH:  case LW:    case LD:
-        case LBU:  case LHU: case LWU:
+        case LBU:  case LHU: case LWU:   case FLW:
           return dataMem; break;
         /* When using the instructions below,
            ALU for branch offset calculation is used */
@@ -393,6 +388,15 @@ private:
         // case INST:
         // ...
         // return COMPONENT_TYPE; break;
+        case FCVT_S_W:  case FCVT_W_S:  case FMV_W_X:
+        case FMV_X_W:
+          return int2FP; break;
+        case FDIV_S:    case FSQRT_S:   
+          return fpDiv; break;
+        case FADD_S:    case FSUB_S:    
+          return fmaAdd;
+        case FMADD_S:   case FMSUB_S:   case FMUL_S:
+          return fmaMul;  break;
         default:
           return unknown; break;
       }

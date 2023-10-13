@@ -93,54 +93,53 @@ const char *INSTNAME[]{
 } // namespace RISCV
 
 using namespace RISCV;
-uint64_t getFloatOp(uint64_t a,uint64_t b,uint64_t c,int op){
-  union{
-    int64_t i;
-    float f;
-  }tem1,tem2,tem7;
-  tem1.i=a;
-  tem2.i=b;
-  tem7.i=c;
-  int32_t tem3=a;
-  float tem4=tem3;
-  float tem5=tem1.f;
-  float tem6=tem2.f;
-  float tem8=tem7.f;
-  float fout;
-  uint64_t out;
-  switch (op)
-  {
-  case 1:
-    fout=tem5+tem6;
-    break;
-  case 2:
-    fout=tem5-tem6;
-    break;
-  case 3:
-    fout=tem5*tem6;
-    break;
-  case 4:
-    fout=tem5/tem6;
-    break;
-  case 5:
-    fout=std::sqrt(tem5);
-    break;
-  case 6: //fcvt.s.w
-    fout=tem3;
-    break;
-  case 7://fcvt.w.s
-    out=tem5;
-    return out;
-    break;
-  case 8://fmadd.s
-    fout=tem5*tem6+tem8;
-    break;
-  case 9://fmsub.s
-    fout=tem5*tem6-tem8;
-    break;
-  }
-  tem1.f=fout;
-  return tem1.i;
+int64_t getFloatOp(int64_t op1,int64_t op2,int64_t op3,int op){
+    union{
+        int64_t i;
+        float f;
+    }tem1,tem2,tem3;
+    tem1.i=op1;
+    tem2.i=op2;
+    tem3.i=op3;
+    int tem4=op1;
+    float opf1=tem1.f;
+    float opf2=tem2.f;
+    float opf3=tem3.f;
+    float fout;
+    int64_t out;
+    switch (op)
+    {
+    case 1: // add
+        fout=opf1+opf2;
+        break;
+    case 2: // sub
+        fout=opf1-opf2;
+        break;
+    case 3: // mul
+        fout=opf1*opf2;
+        break;
+    case 4: // div
+        fout=opf1 / opf2;
+        break;
+    case 5: // sqrt
+        fout=std::sqrt(opf1);
+        break;
+    case 6: // fcvt.s.w
+        fout=tem4;
+        break;
+    case 7: // fcvt.w.s
+        out=opf1;
+        return out;
+        break;
+    case 8: // fmadd.s
+        fout=opf1*opf2+opf3;
+        break; 
+    case 9: // fmsub.s
+        fout=opf1*opf2-opf3;
+        break; 
+    }
+    tem1.f=fout;
+    return tem1.i;
 }
 Simulator::Simulator(MemoryManager *memory, BranchPredictor *predictor) {
   this->memory = memory;
@@ -631,6 +630,7 @@ void Simulator::decode() {
       if (funct3 == 0x0 && funct7 == 0x000) {
         instname = "ecall";
         op2 = this->reg[REG_A7];
+        rs2=REG_A7;
         if(op2==6){
           op1 = this->reg[REG_FA0];
           reg1=REG_FA0;
@@ -941,14 +941,14 @@ void Simulator::decode() {
   this->dRegNew.bubble = false;
   this->dRegNew.rs1 = reg1;
   this->dRegNew.rs2 = reg2;
-  this->dRegNew.rs3=reg3;
+  this->dRegNew.rs3 = reg3;
   this->dRegNew.pc = this->fReg.pc;
   this->dRegNew.inst = insttype;
   this->dRegNew.predictedBranch = predictedBranch;
   this->dRegNew.dest = dest;
   this->dRegNew.op1 = op1;
   this->dRegNew.op2 = op2;
-  this->dRegNew.op3=op3;
+  this->dRegNew.op3 = op3;
   this->dRegNew.offset = offset;
 }
 
@@ -973,7 +973,6 @@ void Simulator::excecute() {
   }
 
   this->history.instCount++;
-
   Inst inst = this->dReg.inst;
   int64_t op1 = this->dReg.op1;
   int64_t op2 = this->dReg.op2;
@@ -1225,9 +1224,11 @@ void Simulator::excecute() {
   case FMADD_S:
     writeReg=true;
     out=getFloatOp(op1,op2,op3,8);
+    break;
   case FMSUB_S:
     writeReg=true;
     out=getFloatOp(op1,op2,op3,9);
+    break;
   case FMV_W_X:
     out=op1;
     writeReg=true;
@@ -1258,7 +1259,7 @@ void Simulator::excecute() {
     op2 = op2 & 0xFFFFFFFF;
     break;
   default:
-    this->panic("known instruction type %d\n", inst);
+    this->panic("unknown instruction type %d\n", inst);
   }
 
 
@@ -1301,12 +1302,7 @@ void Simulator::excecute() {
   this->fRegNew.stall = std::max<uint32_t>(lat, this->fRegNew.stall);
   this->dRegNew.stall = std::max<uint32_t>(lat, this->dRegNew.stall);
 
-      // if(inst == ADDI && dRegNew.inst == ECALL){
-      //   printf("\n*******************************\n");
-      //   printf("%x", out);
-      //   printf("\n*******************************\n");
-      // }
-  // Check for data hazard and forward data
+
   if (writeReg && destReg != 0 && !isReadMem(inst)) {
     int flag=0;
     if (this->dRegNew.rs1 == destReg) {
@@ -1326,10 +1322,22 @@ void Simulator::excecute() {
       if (verbose)
         printf("  Forward Data %s to Decode op2\n", REGNAME[destReg]);
     }
+    if (this->dRegNew.rs3 == destReg) {
+      this->dRegNew.op3 = out;
+      this->executeWBReg = destReg;
+      this->executeWriteBack = true;
+      this->history.dataHazardCount++;
+      if (verbose)
+        printf("  Forward Data %s to Decode op3\n", REGNAME[destReg]);
+    }
     if(dRegNew.inst==ECALL && out==6 && flag==1){
       this->dRegNew.op1=reg[REG_FA0];
+      this->dRegNew.rs1=REG_FA0;
     }
-    flag=0;
+    if(dRegNew.inst==ECALL && out!=6 && flag==1){
+      this->dRegNew.op1=reg[REG_A0];
+      this->dRegNew.rs1=REG_A0;
+    }
   }
 
   this->eRegNew.bubble = false;
@@ -1371,6 +1379,7 @@ void Simulator::memoryAccess() {
   RegId destReg = this->eReg.destReg;
   int64_t op1 = this->eReg.op1; // for jalr
   int64_t op2 = this->eReg.op2; // for store
+  int64_t op3 = this->eReg.op3;
   int64_t out = this->eReg.out;
   bool writeMem = this->eReg.writeMem;
   bool readMem = this->eReg.readMem;
@@ -1473,10 +1482,23 @@ void Simulator::memoryAccess() {
           printf("  Forward Data %s to Decode op2\n", REGNAME[destReg]);
       }
     }
+    if (this->dRegNew.rs3 == destReg) {
+      // Avoid overwriting recent values
+      if (this->executeWriteBack == false ||
+          (this->executeWriteBack && this->executeWBReg != destReg)) {
+        this->dRegNew.op3 = out;
+        this->memoryWriteBack = true;
+        this->memoryWBReg = destReg;
+        this->history.dataHazardCount++;
+        if (verbose)
+          printf("  Forward Data %s to Decode op3\n", REGNAME[destReg]);
+      }
+    }
     // Corner case of forwarding mem load data to stalled decode reg
     if (this->dReg.stall) {
       if (this->dReg.rs1 == destReg) this->dReg.op1 = out;
       if (this->dReg.rs2 == destReg) this->dReg.op2 = out;
+      if (this->dReg.rs3 == destReg) this->dReg.op3 = out;
       this->memoryWriteBack = true;
       this->memoryWBReg = destReg;
       this->history.dataHazardCount++;
@@ -1491,6 +1513,7 @@ void Simulator::memoryAccess() {
   this->mRegNew.inst = inst;
   this->mRegNew.op1 = op1;
   this->mRegNew.op2 = op2;
+  this->mRegNew.op2 = op3;
   this->mRegNew.destReg = destReg;
   this->mRegNew.writeReg = writeReg;
   this->mRegNew.out = out;
@@ -1550,11 +1573,25 @@ void Simulator::writeBack() {
         }
       }
     }
-
+    if (this->dRegNew.rs3 == this->mReg.destReg) {
+      // Avoid overwriting recent data
+      if (!this->executeWriteBack ||
+          (this->executeWriteBack &&
+           this->executeWBReg != this->mReg.destReg)) {
+        if (!this->memoryWriteBack ||
+            (this->memoryWriteBack &&
+             this->memoryWBReg != this->mReg.destReg)) {
+          this->dRegNew.op3 = this->mReg.out;
+          this->history.dataHazardCount++;
+          if (verbose)
+            printf("  Forward Data %s to Decode op3\n",
+                   REGNAME[this->mReg.destReg]);
+        }
+      }
+    }
+  }
     // Real Write Back
     this->reg[this->mReg.destReg] = this->mReg.out;
-  }
-
 }
 
 int64_t Simulator::handleSystemCall(int64_t op1, int64_t op2) {
@@ -1597,7 +1634,7 @@ int64_t Simulator::handleSystemCall(int64_t op1, int64_t op2) {
     scanf(" %ld", &op1);
     break;
   case 6: // print float
-    printf("%f\n", arg2.f);
+    printf("%f", arg2.f);
     break;
   default:
     this->panic("Unknown syscall type %d", type);

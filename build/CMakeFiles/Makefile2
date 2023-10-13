@@ -54,10 +54,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/baichuan/ca2/fengxiao-RISCV-Simulator
+CMAKE_SOURCE_DIR = /home/fxiao/CS211/lab0/cs211_lab0/CS211
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/baichuan/ca2/fengxiao-RISCV-Simulator/build
+CMAKE_BINARY_DIR = /home/fxiao/CS211/lab0/cs211_lab0/CS211/build
 
 #=============================================================================
 # Directory level rules for the build root directory
@@ -87,14 +87,14 @@ clean: CMakeFiles/ToDirenoTrace.dir/clean
 CMakeFiles/Simulator.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Simulator.dir/build.make CMakeFiles/Simulator.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Simulator.dir/build.make CMakeFiles/Simulator.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=9,10,11,12,13,14 "Built target Simulator"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles --progress-num=9,10,11,12,13,14 "Built target Simulator"
 .PHONY : CMakeFiles/Simulator.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/Simulator.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles 6
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/Simulator.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles 0
 .PHONY : CMakeFiles/Simulator.dir/rule
 
 # Convenience name for target.
@@ -113,14 +113,14 @@ CMakeFiles/Simulator.dir/clean:
 CMakeFiles/CacheSim.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/CacheSim.dir/build.make CMakeFiles/CacheSim.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/CacheSim.dir/build.make CMakeFiles/CacheSim.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=5,6,7,8 "Built target CacheSim"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles --progress-num=5,6,7,8 "Built target CacheSim"
 .PHONY : CMakeFiles/CacheSim.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/CacheSim.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles 4
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles 4
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/CacheSim.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles 0
 .PHONY : CMakeFiles/CacheSim.dir/rule
 
 # Convenience name for target.
@@ -139,14 +139,14 @@ CMakeFiles/CacheSim.dir/clean:
 CMakeFiles/CacheOptimized.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/CacheOptimized.dir/build.make CMakeFiles/CacheOptimized.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/CacheOptimized.dir/build.make CMakeFiles/CacheOptimized.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=1,2,3,4 "Built target CacheOptimized"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles --progress-num=1,2,3,4 "Built target CacheOptimized"
 .PHONY : CMakeFiles/CacheOptimized.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/CacheOptimized.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles 4
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles 4
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/CacheOptimized.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles 0
 .PHONY : CMakeFiles/CacheOptimized.dir/rule
 
 # Convenience name for target.
@@ -165,14 +165,14 @@ CMakeFiles/CacheOptimized.dir/clean:
 CMakeFiles/ToDirenoTrace.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ToDirenoTrace.dir/build.make CMakeFiles/ToDirenoTrace.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ToDirenoTrace.dir/build.make CMakeFiles/ToDirenoTrace.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=15,16 "Built target ToDirenoTrace"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles --progress-num=15,16 "Built target ToDirenoTrace"
 .PHONY : CMakeFiles/ToDirenoTrace.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/ToDirenoTrace.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles 2
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/ToDirenoTrace.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles 0
 .PHONY : CMakeFiles/ToDirenoTrace.dir/rule
 
 # Convenience name for target.

@@ -1,5 +1,5 @@
 CMakeFiles/ToDirenoTrace.dir/src/ToDirenoTrace.cpp.o: \
- /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/ToDirenoTrace.cpp \
+ /home/fxiao/CS211/lab0/cs211_lab0/CS211/src/ToDirenoTrace.cpp \
  /usr/include/stdc-predef.h /usr/include/c++/11/fstream \
  /usr/include/c++/11/istream /usr/include/c++/11/ios \
  /usr/include/c++/11/iosfwd \

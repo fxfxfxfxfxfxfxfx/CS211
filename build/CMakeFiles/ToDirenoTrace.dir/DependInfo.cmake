@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/baichuan/ca2/fengxiao-RISCV-Simulator/src/ToDirenoTrace.cpp" "CMakeFiles/ToDirenoTrace.dir/src/ToDirenoTrace.cpp.o" "gcc" "CMakeFiles/ToDirenoTrace.dir/src/ToDirenoTrace.cpp.o.d"
+  "/home/fxiao/CS211/lab0/cs211_lab0/CS211/src/ToDirenoTrace.cpp" "CMakeFiles/ToDirenoTrace.dir/src/ToDirenoTrace.cpp.o" "gcc" "CMakeFiles/ToDirenoTrace.dir/src/ToDirenoTrace.cpp.o.d"
   )
 
 # Targets to which this target links.
