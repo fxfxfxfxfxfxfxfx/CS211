@@ -1,6 +1,6 @@
-/home/fxiao/CS211/lab0/CS211_lab0/build/CMakeFiles/Simulator.dir
-/home/fxiao/CS211/lab0/CS211_lab0/build/CMakeFiles/CacheSim.dir
-/home/fxiao/CS211/lab0/CS211_lab0/build/CMakeFiles/CacheOptimized.dir
-/home/fxiao/CS211/lab0/CS211_lab0/build/CMakeFiles/ToDirenoTrace.dir
-/home/fxiao/CS211/lab0/CS211_lab0/build/CMakeFiles/edit_cache.dir
-/home/fxiao/CS211/lab0/CS211_lab0/build/CMakeFiles/rebuild_cache.dir
+/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles/Simulator.dir
+/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles/CacheSim.dir
+/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles/CacheOptimized.dir
+/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles/ToDirenoTrace.dir
+/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles/edit_cache.dir
+/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles/rebuild_cache.dir

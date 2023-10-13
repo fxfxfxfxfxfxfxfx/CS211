@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/fxiao/CS211/lab0/CS211_lab0
+CMAKE_SOURCE_DIR = /home/baichuan/ca2/fengxiao-RISCV-Simulator
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/fxiao/CS211/lab0/CS211_lab0/build
+CMAKE_BINARY_DIR = /home/baichuan/ca2/fengxiao-RISCV-Simulator/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/Simulator.dir/depend.make
@@ -72,72 +72,72 @@ include CMakeFiles/Simulator.dir/flags.make
 CMakeFiles/Simulator.dir/src/MainCPU.cpp.o: CMakeFiles/Simulator.dir/flags.make
 CMakeFiles/Simulator.dir/src/MainCPU.cpp.o: ../src/MainCPU.cpp
 CMakeFiles/Simulator.dir/src/MainCPU.cpp.o: CMakeFiles/Simulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/fxiao/CS211/lab0/CS211_lab0/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/Simulator.dir/src/MainCPU.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Simulator.dir/src/MainCPU.cpp.o -MF CMakeFiles/Simulator.dir/src/MainCPU.cpp.o.d -o CMakeFiles/Simulator.dir/src/MainCPU.cpp.o -c /home/fxiao/CS211/lab0/CS211_lab0/src/MainCPU.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/Simulator.dir/src/MainCPU.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Simulator.dir/src/MainCPU.cpp.o -MF CMakeFiles/Simulator.dir/src/MainCPU.cpp.o.d -o CMakeFiles/Simulator.dir/src/MainCPU.cpp.o -c /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MainCPU.cpp
 
 CMakeFiles/Simulator.dir/src/MainCPU.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Simulator.dir/src/MainCPU.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/fxiao/CS211/lab0/CS211_lab0/src/MainCPU.cpp > CMakeFiles/Simulator.dir/src/MainCPU.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MainCPU.cpp > CMakeFiles/Simulator.dir/src/MainCPU.cpp.i
 
 CMakeFiles/Simulator.dir/src/MainCPU.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Simulator.dir/src/MainCPU.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/fxiao/CS211/lab0/CS211_lab0/src/MainCPU.cpp -o CMakeFiles/Simulator.dir/src/MainCPU.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MainCPU.cpp -o CMakeFiles/Simulator.dir/src/MainCPU.cpp.s
 
 CMakeFiles/Simulator.dir/src/MemoryManager.cpp.o: CMakeFiles/Simulator.dir/flags.make
 CMakeFiles/Simulator.dir/src/MemoryManager.cpp.o: ../src/MemoryManager.cpp
 CMakeFiles/Simulator.dir/src/MemoryManager.cpp.o: CMakeFiles/Simulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/fxiao/CS211/lab0/CS211_lab0/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/Simulator.dir/src/MemoryManager.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Simulator.dir/src/MemoryManager.cpp.o -MF CMakeFiles/Simulator.dir/src/MemoryManager.cpp.o.d -o CMakeFiles/Simulator.dir/src/MemoryManager.cpp.o -c /home/fxiao/CS211/lab0/CS211_lab0/src/MemoryManager.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/Simulator.dir/src/MemoryManager.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Simulator.dir/src/MemoryManager.cpp.o -MF CMakeFiles/Simulator.dir/src/MemoryManager.cpp.o.d -o CMakeFiles/Simulator.dir/src/MemoryManager.cpp.o -c /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MemoryManager.cpp
 
 CMakeFiles/Simulator.dir/src/MemoryManager.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Simulator.dir/src/MemoryManager.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/fxiao/CS211/lab0/CS211_lab0/src/MemoryManager.cpp > CMakeFiles/Simulator.dir/src/MemoryManager.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MemoryManager.cpp > CMakeFiles/Simulator.dir/src/MemoryManager.cpp.i
 
 CMakeFiles/Simulator.dir/src/MemoryManager.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Simulator.dir/src/MemoryManager.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/fxiao/CS211/lab0/CS211_lab0/src/MemoryManager.cpp -o CMakeFiles/Simulator.dir/src/MemoryManager.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MemoryManager.cpp -o CMakeFiles/Simulator.dir/src/MemoryManager.cpp.s
 
 CMakeFiles/Simulator.dir/src/Simulator.cpp.o: CMakeFiles/Simulator.dir/flags.make
 CMakeFiles/Simulator.dir/src/Simulator.cpp.o: ../src/Simulator.cpp
 CMakeFiles/Simulator.dir/src/Simulator.cpp.o: CMakeFiles/Simulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/fxiao/CS211/lab0/CS211_lab0/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/Simulator.dir/src/Simulator.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Simulator.dir/src/Simulator.cpp.o -MF CMakeFiles/Simulator.dir/src/Simulator.cpp.o.d -o CMakeFiles/Simulator.dir/src/Simulator.cpp.o -c /home/fxiao/CS211/lab0/CS211_lab0/src/Simulator.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/Simulator.dir/src/Simulator.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Simulator.dir/src/Simulator.cpp.o -MF CMakeFiles/Simulator.dir/src/Simulator.cpp.o.d -o CMakeFiles/Simulator.dir/src/Simulator.cpp.o -c /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/Simulator.cpp
 
 CMakeFiles/Simulator.dir/src/Simulator.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Simulator.dir/src/Simulator.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/fxiao/CS211/lab0/CS211_lab0/src/Simulator.cpp > CMakeFiles/Simulator.dir/src/Simulator.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/Simulator.cpp > CMakeFiles/Simulator.dir/src/Simulator.cpp.i
 
 CMakeFiles/Simulator.dir/src/Simulator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Simulator.dir/src/Simulator.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/fxiao/CS211/lab0/CS211_lab0/src/Simulator.cpp -o CMakeFiles/Simulator.dir/src/Simulator.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/Simulator.cpp -o CMakeFiles/Simulator.dir/src/Simulator.cpp.s
 
 CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o: CMakeFiles/Simulator.dir/flags.make
 CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o: ../src/BranchPredictor.cpp
 CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o: CMakeFiles/Simulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/fxiao/CS211/lab0/CS211_lab0/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o -MF CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o.d -o CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o -c /home/fxiao/CS211/lab0/CS211_lab0/src/BranchPredictor.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o -MF CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o.d -o CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o -c /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/BranchPredictor.cpp
 
 CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/fxiao/CS211/lab0/CS211_lab0/src/BranchPredictor.cpp > CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/BranchPredictor.cpp > CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.i
 
 CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/fxiao/CS211/lab0/CS211_lab0/src/BranchPredictor.cpp -o CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/BranchPredictor.cpp -o CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.s
 
 CMakeFiles/Simulator.dir/src/Cache.cpp.o: CMakeFiles/Simulator.dir/flags.make
 CMakeFiles/Simulator.dir/src/Cache.cpp.o: ../src/Cache.cpp
 CMakeFiles/Simulator.dir/src/Cache.cpp.o: CMakeFiles/Simulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/fxiao/CS211/lab0/CS211_lab0/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/Simulator.dir/src/Cache.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Simulator.dir/src/Cache.cpp.o -MF CMakeFiles/Simulator.dir/src/Cache.cpp.o.d -o CMakeFiles/Simulator.dir/src/Cache.cpp.o -c /home/fxiao/CS211/lab0/CS211_lab0/src/Cache.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/Simulator.dir/src/Cache.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Simulator.dir/src/Cache.cpp.o -MF CMakeFiles/Simulator.dir/src/Cache.cpp.o.d -o CMakeFiles/Simulator.dir/src/Cache.cpp.o -c /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/Cache.cpp
 
 CMakeFiles/Simulator.dir/src/Cache.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Simulator.dir/src/Cache.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/fxiao/CS211/lab0/CS211_lab0/src/Cache.cpp > CMakeFiles/Simulator.dir/src/Cache.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/Cache.cpp > CMakeFiles/Simulator.dir/src/Cache.cpp.i
 
 CMakeFiles/Simulator.dir/src/Cache.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Simulator.dir/src/Cache.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/fxiao/CS211/lab0/CS211_lab0/src/Cache.cpp -o CMakeFiles/Simulator.dir/src/Cache.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/Cache.cpp -o CMakeFiles/Simulator.dir/src/Cache.cpp.s
 
 # Object files for target Simulator
 Simulator_OBJECTS = \
@@ -157,7 +157,7 @@ Simulator: CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o
 Simulator: CMakeFiles/Simulator.dir/src/Cache.cpp.o
 Simulator: CMakeFiles/Simulator.dir/build.make
 Simulator: CMakeFiles/Simulator.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/fxiao/CS211/lab0/CS211_lab0/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable Simulator"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable Simulator"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/Simulator.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -169,6 +169,6 @@ CMakeFiles/Simulator.dir/clean:
 .PHONY : CMakeFiles/Simulator.dir/clean
 
 CMakeFiles/Simulator.dir/depend:
-	cd /home/fxiao/CS211/lab0/CS211_lab0/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/fxiao/CS211/lab0/CS211_lab0 /home/fxiao/CS211/lab0/CS211_lab0 /home/fxiao/CS211/lab0/CS211_lab0/build /home/fxiao/CS211/lab0/CS211_lab0/build /home/fxiao/CS211/lab0/CS211_lab0/build/CMakeFiles/Simulator.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/baichuan/ca2/fengxiao-RISCV-Simulator/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/baichuan/ca2/fengxiao-RISCV-Simulator /home/baichuan/ca2/fengxiao-RISCV-Simulator /home/baichuan/ca2/fengxiao-RISCV-Simulator/build /home/baichuan/ca2/fengxiao-RISCV-Simulator/build /home/baichuan/ca2/fengxiao-RISCV-Simulator/build/CMakeFiles/Simulator.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/Simulator.dir/depend
 

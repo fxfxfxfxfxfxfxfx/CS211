@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/fxiao/CS211/lab0/CS211_lab0/include
+CXX_INCLUDES = -I/home/baichuan/ca2/fengxiao-RISCV-Simulator/include
 
 CXX_FLAGS = -O2 -Wall -std=gnu++11
 

@@ -1301,11 +1301,15 @@ void Simulator::excecute() {
   this->fRegNew.stall = std::max<uint32_t>(lat, this->fRegNew.stall);
   this->dRegNew.stall = std::max<uint32_t>(lat, this->dRegNew.stall);
 
+      // if(inst == ADDI && dRegNew.inst == ECALL){
+      //   printf("\n*******************************\n");
+      //   printf("%x", out);
+      //   printf("\n*******************************\n");
+      // }
   // Check for data hazard and forward data
   if (writeReg && destReg != 0 && !isReadMem(inst)) {
     int flag=0;
     if (this->dRegNew.rs1 == destReg) {
-      // if(inst == ADDI)
       this->dRegNew.op1 = out;
       this->executeWBReg = destReg;
       this->executeWriteBack = true;
@@ -1596,7 +1600,7 @@ int64_t Simulator::handleSystemCall(int64_t op1, int64_t op2) {
     printf("%f\n", arg2.f);
     break;
   default:
-    this->panic("Unknown syscall type %d\n", type);
+    this->panic("Unknown syscall type %d", type);
   }
   return op1;
 }

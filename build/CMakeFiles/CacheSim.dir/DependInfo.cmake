@@ -8,9 +8,9 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/fxiao/CS211/lab0/CS211_lab0/src/Cache.cpp" "CMakeFiles/CacheSim.dir/src/Cache.cpp.o" "gcc" "CMakeFiles/CacheSim.dir/src/Cache.cpp.o.d"
-  "/home/fxiao/CS211/lab0/CS211_lab0/src/MainCache.cpp" "CMakeFiles/CacheSim.dir/src/MainCache.cpp.o" "gcc" "CMakeFiles/CacheSim.dir/src/MainCache.cpp.o.d"
-  "/home/fxiao/CS211/lab0/CS211_lab0/src/MemoryManager.cpp" "CMakeFiles/CacheSim.dir/src/MemoryManager.cpp.o" "gcc" "CMakeFiles/CacheSim.dir/src/MemoryManager.cpp.o.d"
+  "/home/baichuan/ca2/fengxiao-RISCV-Simulator/src/Cache.cpp" "CMakeFiles/CacheSim.dir/src/Cache.cpp.o" "gcc" "CMakeFiles/CacheSim.dir/src/Cache.cpp.o.d"
+  "/home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MainCache.cpp" "CMakeFiles/CacheSim.dir/src/MainCache.cpp.o" "gcc" "CMakeFiles/CacheSim.dir/src/MainCache.cpp.o.d"
+  "/home/baichuan/ca2/fengxiao-RISCV-Simulator/src/MemoryManager.cpp" "CMakeFiles/CacheSim.dir/src/MemoryManager.cpp.o" "gcc" "CMakeFiles/CacheSim.dir/src/MemoryManager.cpp.o.d"
   )
 
 # Targets to which this target links.

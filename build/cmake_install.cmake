@@ -1,4 +1,4 @@
-# Install script for directory: /home/fxiao/CS211/lab0/CS211_lab0
+# Install script for directory: /home/baichuan/ca2/fengxiao-RISCV-Simulator
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/fxiao/CS211/lab0/CS211_lab0/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/baichuan/ca2/fengxiao-RISCV-Simulator/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

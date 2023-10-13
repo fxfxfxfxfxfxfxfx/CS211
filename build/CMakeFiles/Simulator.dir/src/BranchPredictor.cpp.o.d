@@ -1,7 +1,7 @@
 CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o: \
- /home/fxiao/CS211/lab0/CS211_lab0/src/BranchPredictor.cpp \
+ /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/BranchPredictor.cpp \
  /usr/include/stdc-predef.h \
- /home/fxiao/CS211/lab0/CS211_lab0/src/BranchPredictor.h \
+ /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/BranchPredictor.h \
  /usr/include/c++/11/cstdint \
  /usr/include/x86_64-linux-gnu/c++/11/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/os_defines.h \
@@ -131,5 +131,5 @@ CMakeFiles/Simulator.dir/src/BranchPredictor.cpp.o: \
  /usr/include/c++/11/bits/functional_hash.h \
  /usr/include/c++/11/bits/hash_bytes.h \
  /usr/include/c++/11/bits/basic_string.tcc \
- /home/fxiao/CS211/lab0/CS211_lab0/src/Debug.h \
+ /home/baichuan/ca2/fengxiao-RISCV-Simulator/src/Debug.h \
  /usr/include/c++/11/cstdarg
