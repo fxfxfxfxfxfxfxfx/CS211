@@ -1,1 +1,0 @@
-/usr/bin/c++ -O2 -Wall -rdynamic CMakeFiles/ToDirenoTrace.dir/src/ToDirenoTrace.cpp.o -o ToDirenoTrace 

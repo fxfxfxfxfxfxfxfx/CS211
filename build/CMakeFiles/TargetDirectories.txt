@@ -1,6 +1,0 @@
-/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles/Simulator.dir
-/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles/CacheSim.dir
-/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles/CacheOptimized.dir
-/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles/ToDirenoTrace.dir
-/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles/edit_cache.dir
-/home/fxiao/CS211/lab0/cs211_lab0/CS211/build/CMakeFiles/rebuild_cache.dir
