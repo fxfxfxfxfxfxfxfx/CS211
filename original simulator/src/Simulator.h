@@ -193,7 +193,6 @@ private:
     // Control Signals
     bool bubble;
     uint32_t stall;
-
     uint64_t pc;
     uint32_t inst;
     uint32_t len;

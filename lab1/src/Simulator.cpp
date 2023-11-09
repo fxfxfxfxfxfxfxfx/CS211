@@ -6,63 +6,14 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-
+#include <queue>
 #include "Debug.h"
 #include "Simulator.h"
 
-namespace RISCV {
 
-const char *REGNAME[32] = {
-    "zero", // x0
-    "ra",   // x1
-    "sp",   // x2
-    "gp",   // x3
-    "tp",   // x4
-    "t0",   // x5
-    "t1",   // x6
-    "t2",   // x7
-    "s0",   // x8
-    "s1",   // x9
-    "a0",   // x10
-    "a1",   // x11
-    "a2",   // x12
-    "a3",   // x13
-    "a4",   // x14
-    "a5",   // x15
-    "a6",   // x16
-    "a7",   // x17
-    "s2",   // x18
-    "s3",   // x19
-    "s4",   // x20
-    "s5",   // x21
-    "s6",   // x22
-    "s7",   // x23
-    "s8",   // x24
-    "s9",   // x25
-    "s10",  // x26
-    "s11",  // x27
-    "t3",   // x28
-    "t4",   // x29
-    "t5",   // x30
-    "t6",   // x31
-};
-
-const char *INSTNAME[]{
-    "lui",  "auipc", "jal",   "jalr",  "beq",   "bne",  "blt",  "bge",  "bltu",
-    "bgeu", "lb",    "lh",    "lw",    "ld",    "lbu",  "lhu",  "sb",   "sh",
-    "sw",   "sd",    "addi",  "slti",  "sltiu", "xori", "ori",  "andi", "slli",
-    "srli", "srai",  "add",   "sub",   "sll",   "slt",  "sltu", "xor",  "srl",
-    "sra",  "or",    "and",   "ecall", "addiw", "mul",  "mulh", "div",  "rem",
-    "lwu",  "slliw", "srliw", "sraiw", "addw",  "subw", "sllw", "srlw", "sraw",
-};
-
-} // namespace RISCV
-
-using namespace RISCV;
-
-Simulator::Simulator(MemoryManager *memory, BranchPredictor *predictor) {
+Simulator::Simulator(MemoryManager *memory, Scoreboard *scoreboard) {
   this->memory = memory;
-  this->branchPredictor = predictor;
+  this->scoreboard=scoreboard;
   this->pc = 0;
   for (int i = 0; i < REGNUM; ++i) {
     this->reg[i] = 0;
@@ -84,63 +35,47 @@ void Simulator::initStack(uint32_t baseaddr, uint32_t maxSize) {
 }
 
 void Simulator::simulate() {
-  // Initialize pipeline registers
-  memset(&this->fReg, 0, sizeof(this->fReg));
-  memset(&this->fRegNew, 0, sizeof(this->fRegNew));
-  memset(&this->dReg, 0, sizeof(this->dReg));
-  memset(&this->dRegNew, 0, sizeof(this->dReg));
-  memset(&this->eReg, 0, sizeof(this->eReg));
-  memset(&this->eRegNew, 0, sizeof(this->eRegNew));
-  memset(&this->mReg, 0, sizeof(this->mReg));
-  memset(&this->mRegNew, 0, sizeof(this->mRegNew));
-
-  // Insert Bubble to later pipeline stages
-  fReg.bubble = true;
-  dReg.bubble = true;
-  eReg.bubble = true;
-  mReg.bubble = true;
-
   // Main Simulation Loop
+  struct snapShotUnit
+  {
+    uint64_t pc;
+    instCompleteSchedule instSc;
+  }tem;
+  vector<snapShotUnit> snapShot;
   while (true) {
     if (this->reg[0] != 0) {
       // Some instruction might set this register to zero
       this->reg[0] = 0;
       // this->panic("Register 0's value is not zero!\n");
     }
+    for(int i=0;i<this->scoreboard->instStatus.size();i++){
+      tem.pc=this->scoreboard->instStatus[i].pc;
+      tem.instSc=this->scoreboard->instStatus[i].instSchedule;
+      snapShot.push_back(tem);
+    }
 
     if (this->reg[REG_SP] < this->stackBase - this->maximumStackSize) {
       this->panic("Stack Overflow!\n");
     }
-
-    this->executeWriteBack = false;
-    this->executeWBReg = -1;
-    this->memoryWriteBack = false;
-    this->memoryWBReg = -1;
-
-    // THE EXECUTION ORDER of these functions are important!!!
-    // Changing them will introduce strange bugs
-    this->fetch();
-    this->decode();
-    this->excecute();
-    this->memoryAccess();
-    this->writeBack();
-
-    if (!this->fReg.stall) this->fReg = this->fRegNew;
-    else this->fReg.stall--;
-    if (!this->dReg.stall) this->dReg = this->dRegNew;
-    else this->dReg.stall--;
-    this->eReg = this->eRegNew;
-    this->mReg = this->mRegNew;
-    memset(&this->fRegNew, 0, sizeof(this->fRegNew));
-    memset(&this->dRegNew, 0, sizeof(this->dRegNew));
-    memset(&this->eRegNew, 0, sizeof(this->eRegNew));
-    memset(&this->mRegNew, 0, sizeof(this->mRegNew));
-
-    // The Branch perdiction happens here to avoid strange bugs in branch prediction
-    if (!this->dReg.bubble && !this->dReg.stall && !this->fReg.stall && this->dReg.predictedBranch) {
-      this->pc = this->predictedPC;
+    
+    if(!this->scoreboard->pause)
+      this->issue(this->pc);
+     for(int i=0;i<snapShot.size();i++){
+      if(snapShot[i].instSc==issuedPeriod){
+        this->read(snapShot[i].pc);
+      }
+    }
+     for(int i=0;i<snapShot.size();i++){
+      if(snapShot[i].instSc==readedPeriod){
+        this->execute(snapShot[i].pc);
+      }
+    }
+     for(int i=0;i<snapShot.size();i++){
+      if(snapShot[i].instSc==executePeriod)
+        this->writeBack(snapShot[i].pc);
     }
 
+    snapShot.clear();
     this->history.cycleCount++;
     this->history.regRecord.push_back(this->getRegInfoStr());
     if (this->history.regRecord.size() >= 100000) { // Avoid using up memory
@@ -164,52 +99,21 @@ void Simulator::simulate() {
   }
 }
 
-void Simulator::fetch() {
-  if (this->pc % 2 != 0) {
-    this->panic("Illegal PC 0x%x!\n", this->pc);
-  }
-
-  uint32_t inst = this->memory->getInt(this->pc);
-  uint32_t len = 4;
-
-  if (this->verbose) {
-    printf("Fetched instruction 0x%.8x at address 0x%lx\n", inst, this->pc);
-  }
-
-  this->fRegNew.bubble = false;
-  this->fRegNew.stall = false;
-  this->fRegNew.inst = inst;
-  this->fRegNew.len = len;
-  this->fRegNew.pc = this->pc;
-  this->pc = this->pc + len;
-}
-
-void Simulator::decode() {
-  if (this->fReg.stall) {
-    if (verbose) {
-      printf("Decode: Stall\n");
-    }
-    this->pc = this->pc - 4;
-    return;
-  }
-  if (this->fReg.bubble || this->fReg.inst == 0) {
-    if (verbose) {
-      printf("Decode: Bubble\n");
-    }
-    this->dRegNew.bubble = true;
-    return;
-  }
-
+void Simulator::issue(uint64_t instPC) {
   std::string instname = "";
   std::string inststr = "";
   std::string deststr, op1str, op2str, offsetstr;
   Inst insttype = Inst::UNKNOWN;
-  uint32_t inst = this->fReg.inst;
+  uint32_t inst = this->memory->getInt(this->pc);
+  uint32_t len = 4;
   int64_t op1 = 0, op2 = 0, offset = 0; // op1, op2 and offset are values
   RegId dest = 0, reg1 = -1, reg2 = -1; // reg1 and reg2 are operands
-
+  if (this->pc % 2 != 0) {
+    this->panic("Illegal PC 0x%x!\n", this->pc);
+  }
+  
   // Reg for 32bit instructions
-  if (this->fReg.len == 4) // 32 bit instruction
+  if (len == 4) // 32 bit instruction
   {
     uint32_t opcode = inst & 0x7F;
     uint32_t funct3 = (inst >> 12) & 0x7;
@@ -232,8 +136,6 @@ void Simulator::decode() {
 
     switch (opcode) {
     case OP_REG:
-      op1 = this->reg[rs1];
-      op2 = this->reg[rs2];
       reg1 = rs1;
       reg2 = rs2;
       dest = rd;
@@ -332,7 +234,6 @@ void Simulator::decode() {
       inststr = instname + " " + deststr + "," + op1str + "," + op2str;
       break;
     case OP_IMM:
-      op1 = this->reg[rs1];
       reg1 = rs1;
       op2 = imm_i;
       dest = rd;
@@ -421,7 +322,6 @@ void Simulator::decode() {
       inststr = instname + " " + deststr + "," + op1str;
       break;
     case OP_JALR:
-      op1 = this->reg[rs1];
       reg1 = rs1;
       op2 = imm_i;
       dest = rd;
@@ -433,8 +333,6 @@ void Simulator::decode() {
       inststr = instname + " " + deststr + "," + op1str + "," + op2str;
       break;
     case OP_BRANCH:
-      op1 = this->reg[rs1];
-      op2 = this->reg[rs2];
       reg1 = rs1;
       reg2 = rs2;
       offset = imm_sb;
@@ -472,8 +370,6 @@ void Simulator::decode() {
       inststr = instname + " " + op1str + "," + op2str + "," + offsetstr;
       break;
     case OP_STORE:
-      op1 = this->reg[rs1];
-      op2 = this->reg[rs2];
       reg1 = rs1;
       reg2 = rs2;
       offset = imm_s;
@@ -503,7 +399,6 @@ void Simulator::decode() {
       inststr = instname + " " + op2str + "," + offsetstr + "(" + op1str + ")";
       break;
     case OP_LOAD:
-      op1 = this->reg[rs1];
       reg1 = rs1;
       op2 = imm_i;
       offset = imm_i;
@@ -547,8 +442,6 @@ void Simulator::decode() {
     case OP_SYSTEM:
       if (funct3 == 0x0 && funct7 == 0x000) {
         instname = "ecall";
-        op1 = this->reg[REG_A0];
-        op2 = this->reg[REG_A7];
         reg1 = REG_A0;
         reg2 = REG_A7;
         dest = REG_A0;
@@ -560,7 +453,6 @@ void Simulator::decode() {
       inststr = instname;
       break;
     case OP_IMM32:
-      op1 = this->reg[rs1];
       reg1 = rs1;
       op2 = imm_i;
       dest = rd;
@@ -593,8 +485,6 @@ void Simulator::decode() {
       inststr = instname + " " + deststr + "," + op1str + "," + op2str;
       break;
     case OP_32: {
-      op1 = this->reg[rs1];
-      op2 = this->reg[rs2];
       reg1 = rs1;
       reg2 = rs2;
       dest = rd;
@@ -640,86 +530,129 @@ void Simulator::decode() {
     }
 
     char buf[4096];
-    sprintf(buf, "0x%lx: %s\n", this->fReg.pc, inststr.c_str());
+    sprintf(buf, "0x%lx: %s\n", this->pc, inststr.c_str());
     this->history.instRecord.push_back(buf);
 
-    if (verbose) {
-      printf("Decoded instruction 0x%.8x as %s\n", inst, inststr.c_str());
-    }
+    
   } else { // 16 bit instruction
     this->panic(
         "Current implementation does not support 16bit RV64C instructions!\n");
   }
-
+  
   if (instname != INSTNAME[insttype]) {
     this->panic("Unmatch instname %s with insttype %d\n", instname.c_str(),
                 insttype);
   }
+  
 
-  bool predictedBranch = false;
-  if (isBranch(insttype)) {
-    predictedBranch = this->branchPredictor->predict(this->fReg.pc, insttype,
-                                                     op1, op2, offset);
-    if (predictedBranch) {
-      this->predictedPC = this->fReg.pc + offset;
-      this->anotherPC = this->fReg.pc + 4;
-      this->fRegNew.bubble = true;
-    } else {
-      this->anotherPC = this->fReg.pc + offset;
-    }
+// Determine whether the functional unit is occupied
+  if (verbose) {
+    printf("issue: %s,pc=%x\n", INSTNAME[insttype],instPC);
   }
 
-  this->dRegNew.stall = false;
-  this->dRegNew.bubble = false;
-  this->dRegNew.rs1 = reg1;
-  this->dRegNew.rs2 = reg2;
-  this->dRegNew.pc = this->fReg.pc;
-  this->dRegNew.inst = insttype;
-  this->dRegNew.predictedBranch = predictedBranch;
-  this->dRegNew.dest = dest;
-  this->dRegNew.op1 = op1;
-  this->dRegNew.op2 = op2;
-  this->dRegNew.offset = offset;
+  if(!this->scoreboard->isFuncUnitFree(insttype)||!this->scoreboard->isDestBlank(dest)||this->scoreboard->pause){
+    return;
+  }
+  else{  
+    this->scoreboard->updateFetchInstStatus(this->pc);
+    for(int i=0;i<this->scoreboard->instStatus.size();i++){
+      if(this->scoreboard->instStatus[i].pc==instPC){
+        this->pc = this->pc + len;
+        this->scoreboard->instStatus[i].inst=insttype;
+        this->scoreboard->instStatus[i].rs1=reg1;
+        this->scoreboard->instStatus[i].rs2=reg2;
+        this->scoreboard->instStatus[i].dest=dest;
+        this->scoreboard->instStatus[i].offset=offset;
+        this->scoreboard->instStatus[i].op1=op1;
+        this->scoreboard->instStatus[i].op2=op2;
+        this->scoreboard->instStatus[i].unit=this->scoreboard->updateIssueFuncStatus(insttype,dest,reg1,reg2);
+        this->scoreboard->updateIssueInstStatus(instPC);
+      }
+    }
+  }
+  if(isBranch(insttype)||isJump(insttype))
+    this->scoreboard->pause=true;
 }
 
-void Simulator::excecute() {
-  if (this->dReg.stall) {
-    if (verbose) {
-      printf("Execute: Stall\n");
+void Simulator::read(uint64_t instPC) {
+  int64_t op1,op2;
+  RegId reg1,reg2;
+  FunctionalUnit funit;
+  Inst inst;
+  for(int i=0;i<this->scoreboard->instStatus.size();i++){
+    if(this->scoreboard->instStatus[i].pc==instPC){
+      RISCV::Inst inst=this->scoreboard->instStatus[i].inst;
+      op1=this->scoreboard->instStatus[i].op1;
+      op2=this->scoreboard->instStatus[i].op2;
+      reg1=this->scoreboard->instStatus[i].rs1;
+      reg2=this->scoreboard->instStatus[i].rs2;
+      funit=this->scoreboard->instStatus[i].unit;
+      inst=this->scoreboard->instStatus[i].inst;
     }
-    this->eRegNew.bubble = true;
-    return;
   }
-  if (this->dReg.bubble) {
-    if (verbose) {
-      printf("Execute: Bubble\n");
-    }
-    this->eRegNew.bubble = true;
-    return;
-  }
-
   if (verbose) {
-    printf("Execute: %s\n", INSTNAME[this->dReg.inst]);
+    printf("read: %s,pc=%x\n", INSTNAME[inst],instPC);
   }
+  if(this->scoreboard->isSrcRegReady(funit)){
+    //如果操作数准备好
+    if(reg1!=-1)
+      op1=this->reg[reg1];
+    if(reg2!=-1)
+      op2=this->reg[reg2];
+    for(int i=0;i<this->scoreboard->instStatus.size();i++){
+      if(this->scoreboard->instStatus[i].pc==instPC){
+        this->scoreboard->instStatus[i].op1=op1;
+        this->scoreboard->instStatus[i].op2=op2;
+    }
+    this->scoreboard->updateReadFuncStatus(funit);
+    this->scoreboard->updateReadInstStatus(instPC);
+  }
+  }
+}
 
-  this->history.instCount++;
-
-  Inst inst = this->dReg.inst;
-  int64_t op1 = this->dReg.op1;
-  int64_t op2 = this->dReg.op2;
-  int64_t offset = this->dReg.offset;
-  bool predictedBranch = this->dReg.predictedBranch;
-
-  uint64_t dRegPC = this->dReg.pc;
+void Simulator::execute(uint64_t instPC) {
+  Inst inst;
+  int64_t op1,op2,offset,out;
+  FunctionalUnit funit;
+  uint64_t dRegPC;
+  RegId destReg;
+  uint32_t memLen=0;
   bool writeReg = false;
-  RegId destReg = this->dReg.dest;
-  int64_t out = 0;
   bool writeMem = false;
   bool readMem = false;
   bool readSignExt = false;
-  uint32_t memLen = 0;
   bool branch = false;
+  for(int i=0;i<this->scoreboard->instStatus.size();i++){
+    if(this->scoreboard->instStatus[i].pc==instPC){
+      inst=this->scoreboard->instStatus[i].inst;
+      op1=this->scoreboard->instStatus[i].op1;
+      op2=this->scoreboard->instStatus[i].op2;
+      offset=this->scoreboard->instStatus[i].offset;
+      funit=this->scoreboard->instStatus[i].unit;
+      dRegPC=instPC;
+      destReg=this->scoreboard->instStatus[i].dest;
+    }
+  }
+  if (verbose) {
+    printf("execute: %s,pc=%x\n", INSTNAME[inst],instPC);
+  }
+  this->history.instCount++;
+  if(isReadMem(inst)&&this->scoreboard->unit[funit].readMemOver){
+    this->scoreboard->unit[funit].remainingPeriod--;
+    if(this->scoreboard->unit[funit].remainingPeriod==0){
+      this->scoreboard->updateExecuteInstStatus(instPC);
+    }
+    return;
+  }
+  if(!isReadMem(inst)&&this->scoreboard->unit[funit].remainingPeriod!=latency[getComponentUsed(inst)]+1){
+    this->scoreboard->unit[funit].remainingPeriod--;
+    if(this->scoreboard->unit[funit].remainingPeriod==0){
+      this->scoreboard->updateExecuteInstStatus(instPC);
+    }
+    return;
+  }
 
+  this->scoreboard->unit[funit].remainingPeriod--;
   switch (inst) {
   case LUI:
     writeReg = true;
@@ -935,112 +868,27 @@ void Simulator::excecute() {
   default:
     this->panic("Unknown instruction type %d\n", inst);
   }
-
-  // Pipeline Related Code
-  if (isBranch(inst)) {
-    if (predictedBranch == branch) {
-      this->history.predictedBranch++;
-    } else {
-      // Control Hazard Here
-      this->pc = this->anotherPC;
-      this->fRegNew.bubble = true;
-      this->dRegNew.bubble = true;
-      this->history.unpredictedBranch++;
-      this->history.controlHazardCount++;
-    }
-    // this->dReg.pc: fetch original inst addr, not the modified one
-    this->branchPredictor->update(this->dReg.pc, branch);
-  }
+  //处理跳转
   if (isJump(inst)) {
     // Control hazard here
     this->pc = dRegPC;
-    this->fRegNew.bubble = true;
-    this->dRegNew.bubble = true;
     this->history.controlHazardCount++;
   }
-  if (isReadMem(inst)) {
-    if (this->dRegNew.rs1 == destReg || this->dRegNew.rs2 == destReg) {
-      this->fRegNew.stall = 2;
-      this->dRegNew.stall = 2;
-      this->eRegNew.bubble = true;
-      this->history.cycleCount--;
-      this->history.memoryHazardCount++;
+  //处理分支
+  if (isBranch(inst)) {
+    if (branch) {
+      this->pc=dRegPC;
+      this->history.predictedBranch++;
+    } else {
+      // Control Hazard Here
+      this->scoreboard->pause=false;
+      this->history.unpredictedBranch++;
+      this->history.controlHazardCount++;
     }
   }
-
-  // inside the execute stage, there's ALU and other components
-  // latency analysis of each instruction inside execute stage
-  uint32_t lat = this->latency[getComponentUsed(inst)];
-  // stall the fetch & decode stage to reflect the latency
-  this->fRegNew.stall = std::max<uint32_t>(lat, this->fRegNew.stall);
-  this->dRegNew.stall = std::max<uint32_t>(lat, this->dRegNew.stall);
-
-  // Check for data hazard and forward data
-  if (writeReg && destReg != 0 && !isReadMem(inst)) {
-    if (this->dRegNew.rs1 == destReg) {
-      this->dRegNew.op1 = out;
-      this->executeWBReg = destReg;
-      this->executeWriteBack = true;
-      this->history.dataHazardCount++;
-      if (verbose)
-        printf("  Forward Data %s to Decode op1\n", REGNAME[destReg]);
-    }
-    if (this->dRegNew.rs2 == destReg) {
-      this->dRegNew.op2 = out;
-      this->executeWBReg = destReg;
-      this->executeWriteBack = true;
-      this->history.dataHazardCount++;
-      if (verbose)
-        printf("  Forward Data %s to Decode op2\n", REGNAME[destReg]);
-    }
-  }
-
-  this->eRegNew.bubble = false;
-  this->eRegNew.stall = false;
-  this->eRegNew.pc = dRegPC;
-  this->eRegNew.inst = inst;
-  this->eRegNew.op1 = op1; // for jalr
-  this->eRegNew.op2 = op2; // for store
-  this->eRegNew.writeReg = writeReg;
-  this->eRegNew.destReg = destReg;
-  this->eRegNew.out = out;
-  this->eRegNew.writeMem = writeMem;
-  this->eRegNew.readMem = readMem;
-  this->eRegNew.readSignExt = readSignExt;
-  this->eRegNew.memLen = memLen;
-  this->eRegNew.branch = branch;
-}
-
-void Simulator::memoryAccess() {
-  if (this->eReg.stall) {
-    if (verbose) {
-      printf("Memory Access: Stall\n");
-    }
-    return;
-  }
-  if (this->eReg.bubble) {
-    if (verbose) {
-      printf("Memory Access: Bubble\n");
-    }
-    this->mRegNew.bubble = true;
-    return;
-  }
-
-  uint64_t eRegPC = this->eReg.pc;
-  Inst inst = this->eReg.inst;
-  bool writeReg = this->eReg.writeReg;
-  RegId destReg = this->eReg.destReg;
-  int64_t op1 = this->eReg.op1; // for jalr
-  int64_t op2 = this->eReg.op2; // for store
-  int64_t out = this->eReg.out;
-  bool writeMem = this->eReg.writeMem;
-  bool readMem = this->eReg.readMem;
-  bool readSignExt = this->eReg.readSignExt;
-  uint32_t memLen = this->eReg.memLen;
-
+  //处理访存
   bool good = true;
   uint32_t cycles = 0;
-
   if (writeMem) {
     switch (memLen) {
     case 1:
@@ -1063,7 +911,6 @@ void Simulator::memoryAccess() {
   if (!good) {
     this->panic("Invalid Mem Access!\n");
   }
-
   if (readMem) {
     switch (memLen) {
     case 1:
@@ -1097,124 +944,50 @@ void Simulator::memoryAccess() {
     default:
       this->panic("Unknown memLen %d\n", memLen);
     }
+    this->scoreboard->unit[INTUNIT].remainingPeriod=cycles;
+    this->scoreboard->unit[INTUNIT].readMemOver=true;
   }
-
-  if (this->fReg.stall == datamem_stall_lock) 
-    this->fReg.stall = std::max<uint32_t>(datamem_lat_lower_bound, cycles);
-  if (this->dReg.stall == datamem_stall_lock)
-    this->dReg.stall = std::max<uint32_t>(datamem_lat_lower_bound, cycles);
-
-  if (verbose) {
-    printf("Memory Access: %s\n", INSTNAME[inst]);
-  }
-
-  // Check for data hazard and forward data
-  if (writeReg && destReg != 0) {
-    if (this->dRegNew.rs1 == destReg) {
-      // Avoid overwriting recent values
-      if (this->executeWriteBack == false ||
-          (this->executeWriteBack && this->executeWBReg != destReg)) {
-        this->dRegNew.op1 = out;
-        this->memoryWriteBack = true;
-        this->memoryWBReg = destReg;
-        this->history.dataHazardCount++;
-        if (verbose)
-          printf("  Forward Data %s to Decode op1\n", REGNAME[destReg]);
-      }
-    }
-    if (this->dRegNew.rs2 == destReg) {
-      // Avoid overwriting recent values
-      if (this->executeWriteBack == false ||
-          (this->executeWriteBack && this->executeWBReg != destReg)) {
-        this->dRegNew.op2 = out;
-        this->memoryWriteBack = true;
-        this->memoryWBReg = destReg;
-        this->history.dataHazardCount++;
-        if (verbose)
-          printf("  Forward Data %s to Decode op2\n", REGNAME[destReg]);
-      }
-    }
-    // Corner case of forwarding mem load data to stalled decode reg
-    if (this->dReg.stall) {
-      if (this->dReg.rs1 == destReg) this->dReg.op1 = out;
-      if (this->dReg.rs2 == destReg) this->dReg.op2 = out;
-      this->memoryWriteBack = true;
-      this->memoryWBReg = destReg;
-      this->history.dataHazardCount++;
-      if (verbose)
-          printf("  Forward Data %s to Decode op2\n", REGNAME[destReg]);
+  for(int i=0;i<this->scoreboard->instStatus.size();i++){
+    if(this->scoreboard->instStatus[i].pc==instPC){
+      this->scoreboard->instStatus[i].op1=op1;
+      this->scoreboard->instStatus[i].op2=op2;
+      this->scoreboard->instStatus[i].writeReg=writeReg;
+      this->scoreboard->instStatus[i].out=out;
+      offset=this->scoreboard->instStatus[i].offset;
+      funit=this->scoreboard->instStatus[i].unit;
+      dRegPC=instPC;
+      destReg=this->scoreboard->instStatus[i].dest;
     }
   }
-
-  this->mRegNew.bubble = false;
-  this->mRegNew.stall = false;
-  this->mRegNew.pc = eRegPC;
-  this->mRegNew.inst = inst;
-  this->mRegNew.op1 = op1;
-  this->mRegNew.op2 = op2;
-  this->mRegNew.destReg = destReg;
-  this->mRegNew.writeReg = writeReg;
-  this->mRegNew.out = out;
+  if(this->scoreboard->unit[funit].remainingPeriod==0){
+    this->scoreboard->updateExecuteInstStatus(instPC);
+  }
 }
-
-void Simulator::writeBack() {
-  if (this->mReg.stall) {
-    if (verbose) {
-      printf("WriteBack: stall\n");
+void Simulator::writeBack(uint64_t instPC) {
+  bool writeReg;
+  int64_t out;
+  RegId destReg;
+  Inst inst;
+  FunctionalUnit funit;
+  for(int i=0;i<this->scoreboard->instStatus.size();i++){
+    if(this->scoreboard->instStatus[i].pc==instPC){
+      writeReg=this->scoreboard->instStatus[i].writeReg;
+      destReg=this->scoreboard->instStatus[i].dest;
+      out=this->scoreboard->instStatus[i].out;
+      funit=this->scoreboard->instStatus[i].unit;
+      inst=this->scoreboard->instStatus[i].inst;
     }
-    return;
   }
-  if (this->mReg.bubble) {
-    if (verbose) {
-      printf("WriteBack: Bubble\n");
-    }
-    return;
-  }
-
   if (verbose) {
-    printf("WriteBack: %s\n", INSTNAME[this->mReg.inst]);
+    printf("writeback: %s,pc=%x\n", INSTNAME[inst],instPC);
   }
-
-  if (this->mReg.writeReg && this->mReg.destReg != 0) {
-    // Check for data hazard and forward data
-    if (this->dRegNew.rs1 == this->mReg.destReg) {
-      // Avoid overwriting recent data
-      if (!this->executeWriteBack ||
-          (this->executeWriteBack &&
-           this->executeWBReg != this->mReg.destReg)) {
-        if (!this->memoryWriteBack ||
-            (this->memoryWriteBack &&
-             this->memoryWBReg != this->mReg.destReg)) {
-          this->dRegNew.op1 = this->mReg.out;
-          this->history.dataHazardCount++;
-          if (verbose)
-            printf("  Forward Data %s to Decode op1\n",
-                   REGNAME[this->mReg.destReg]);
-        }
-      }
-    }
-    if (this->dRegNew.rs2 == this->mReg.destReg) {
-      // Avoid overwriting recent data
-      if (!this->executeWriteBack ||
-          (this->executeWriteBack &&
-           this->executeWBReg != this->mReg.destReg)) {
-        if (!this->memoryWriteBack ||
-            (this->memoryWriteBack &&
-             this->memoryWBReg != this->mReg.destReg)) {
-          this->dRegNew.op2 = this->mReg.out;
-          this->history.dataHazardCount++;
-          if (verbose)
-            printf("  Forward Data %s to Decode op2\n",
-                   REGNAME[this->mReg.destReg]);
-        }
-      }
-    }
-
-    // Real Write Back
-    this->reg[this->mReg.destReg] = this->mReg.out;
+  if(!writeReg||this->scoreboard->isDestRead(destReg)){
+    this->reg[destReg]=out;
+    this->scoreboard->updateWriteBackFuncStatus(funit,destReg);
+    this->scoreboard->updateWritebackInstStatus(instPC);
   }
-
-  // this->pc = this->mReg.pc;
+  if(isBranch(inst)||isJump(inst))
+    this->scoreboard->pause=false;
 }
 
 int64_t Simulator::handleSystemCall(int64_t op1, int64_t op2) {
@@ -1269,6 +1042,86 @@ void Simulator::printInfo() {
       printf("\n");
   }
   printf("-----------------------------------\n");
+  printf("------------ SCOREBOARD STATE ------------\n");
+  printf("funit=INTUNIT,busy=%d,remain=%d,fi=%d,fj=%d,fk=%d,qj=%d,qk=%d,Rj=%d,RK=%d\n",
+  this->scoreboard->unit[0].busy,
+  this->scoreboard->unit[0].remainingPeriod,
+  this->scoreboard->unit[0].fi,
+  this->scoreboard->unit[0].fj,
+  this->scoreboard->unit[0].fk,
+  this->scoreboard->unit[0].qj,
+  this->scoreboard->unit[0].qk,
+  this->scoreboard->unit[0].rj,
+  this->scoreboard->unit[0].rk);
+  printf("funit=ADDUNIT,busy=%d,remain=%d,fi=%d,fj=%d,fk=%d,qj=%d,qk=%d,Rj=%d,RK=%d\n",
+  this->scoreboard->unit[1].busy,
+  this->scoreboard->unit[1].remainingPeriod,
+  this->scoreboard->unit[1].fi,
+  this->scoreboard->unit[1].fj,
+  this->scoreboard->unit[1].fk,
+  this->scoreboard->unit[1].qj,
+  this->scoreboard->unit[1].qk,
+  this->scoreboard->unit[1].rj,
+  this->scoreboard->unit[1].rk);
+  printf("funit=MUL1UNIT,busy=%d,remain=%d,fi=%d,fj=%d,fk=%d,qj=%d,qk=%d,Rj=%d,RK=%d\n",
+  this->scoreboard->unit[2].busy,
+  this->scoreboard->unit[2].remainingPeriod,
+  this->scoreboard->unit[2].fi,
+  this->scoreboard->unit[2].fj,
+  this->scoreboard->unit[2].fk,
+  this->scoreboard->unit[2].qj,
+  this->scoreboard->unit[2].qk,
+  this->scoreboard->unit[2].rj,
+  this->scoreboard->unit[2].rk);
+  printf("funit=MUL2UNIT,busy=%d,remain=%d,fi=%d,fj=%d,fk=%d,qj=%d,qk=%d,Rj=%d,RK=%d\n",
+  this->scoreboard->unit[3].busy,
+  this->scoreboard->unit[3].remainingPeriod,
+  this->scoreboard->unit[3].fi,
+  this->scoreboard->unit[3].fj,
+  this->scoreboard->unit[3].fk,
+  this->scoreboard->unit[3].qj,
+  this->scoreboard->unit[3].qk,
+  this->scoreboard->unit[3].rj,
+  this->scoreboard->unit[3].rk);
+  printf("funit=DIVUNIT,busy=%d,remain=%d,fi=%d,fj=%d,fk=%d,qj=%d,qk=%d,Rj=%d,RK=%d\n",
+  this->scoreboard->unit[4].busy,
+  this->scoreboard->unit[4].remainingPeriod,
+  this->scoreboard->unit[4].fi,
+  this->scoreboard->unit[4].fj,
+  this->scoreboard->unit[4].fk,
+  this->scoreboard->unit[4].qj,
+  this->scoreboard->unit[4].qk,
+  this->scoreboard->unit[4].rj,
+  this->scoreboard->unit[4].rk);
+  printf("------------ SCOREBOARD INST STATE ------------\n");
+  for(int i=0;i<this->scoreboard->instStatus.size();i++){
+    printf("%d\n",this->scoreboard->instStatus.size());
+    printf("inst=%s,pc=%d,rs1=%d,rs2=%d,dest=%d,op1=%d,op2=%d,offset=%d,unit=%d,period=%d\n",
+      INSTNAME[this->scoreboard->instStatus[i].inst],
+      this->scoreboard->instStatus[i].pc,
+      this->scoreboard->instStatus[i].rs1,
+      this->scoreboard->instStatus[i].rs2,
+      this->scoreboard->instStatus[i].dest,
+      this->scoreboard->instStatus[i].op1,
+      this->scoreboard->instStatus[i].op2,
+      this->scoreboard->instStatus[i].offset,
+      this->scoreboard->instStatus[i].unit,
+      this->scoreboard->instStatus[i].instSchedule
+    );
+  }
+  printf("------------ REG INST STATE ------------\n");
+  for(int i=0;i<32;i++){
+    printf("%s  ",REGNAME[i]);
+  }
+  printf("\n");
+  for(int i=0;i<32;i++){
+    printf("%d  ",this->scoreboard->registerStatus[i]);
+  }
+  printf("\n");
+  printf("pasue=%d",this->scoreboard->pause);
+  printf("\n");
+  printf("-----------------------------------\n");
+
 }
 
 void Simulator::printStatistics() {
@@ -1277,10 +1130,6 @@ void Simulator::printStatistics() {
   printf("Number of Cycles: %u\n", this->history.cycleCount);
   printf("Avg Cycles per Instrcution: %.4f\n",
          (float)this->history.cycleCount / this->history.instCount);
-  printf("Branch Perdiction Accuacy: %.4f (Strategy: %s)\n",
-         (float)this->history.predictedBranch /
-             (this->history.predictedBranch + this->history.unpredictedBranch),
-         this->branchPredictor->strategyName().c_str());
   printf("Number of Control Hazards: %u\n",
          this->history.controlHazardCount);
   printf("Number of Data Hazards: %u\n", this->history.dataHazardCount);

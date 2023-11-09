@@ -11,8 +11,9 @@ add_executable(
     Simulator 
     src/MainCPU.cpp 
     src/MemoryManager.cpp 
+    src/Scoreboard.cpp
     src/Simulator.cpp 
-    src/BranchPredictor.cpp 
+    src/RISCV.cpp
     src/Cache.cpp
 )
 
