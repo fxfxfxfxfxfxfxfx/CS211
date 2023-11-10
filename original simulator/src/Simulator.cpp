@@ -942,14 +942,14 @@ void Simulator::excecute() {
       this->history.predictedBranch++;
     } else {
       // Control Hazard Here
-      if (branch)
-+        this->pc = dRegPC;
-+      else
-+        this->pc = this->dReg.pc + 4;
-      this->fRegNew.bubble = true;
-      this->dRegNew.bubble = true;
-      this->history.unpredictedBranch++;
-      this->history.controlHazardCount++;
+    if (branch)
+        this->pc = dRegPC;
+    else
+      this->pc = this->dReg.pc + 4;
+    this->fRegNew.bubble = true;
+    this->dRegNew.bubble = true;
+    this->history.unpredictedBranch++;
+    this->history.controlHazardCount++;
     }
     // this->dReg.pc: fetch original inst addr, not the modified one
     this->branchPredictor->update(this->dReg.pc, branch);
