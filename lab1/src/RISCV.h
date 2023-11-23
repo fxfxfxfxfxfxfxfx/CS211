@@ -1,6 +1,7 @@
 #include <cstdint>
 namespace RISCV {
 const int REGNUM = 32;
+const int UNITNUM = 5;
 typedef uint32_t RegId;
 enum Reg {
   REG_ZERO = 0,

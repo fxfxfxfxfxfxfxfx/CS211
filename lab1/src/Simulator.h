@@ -27,6 +27,12 @@ public:
   uint32_t stackBase;
   uint32_t maximumStackSize;
   MemoryManager *memory;
+  struct snapShotUnit
+  {
+    uint64_t pc;
+    instCompleteSchedule instSc;
+  }tem;
+  vector<snapShotUnit> snapShot;
   Scoreboard *scoreboard;
 
   Simulator(MemoryManager *memory,Scoreboard *scoreboard);
@@ -44,73 +50,24 @@ public:
 
 
 private: 
-
-  struct IReg {
-    // Control Signals
-    bool bubble;
-    uint32_t stall;
-    uint64_t pc;
-    RISCV::RegId rs1, rs2;
-    RISCV::RegId dest;
-    int64_t op1,op2,offset;
-    RISCV::Inst inst;
-    FunctionalUnit unit;
-  } iIntReg,iIntRegNew,iAddReg,iAddRegNew,iMul1Reg,iMul1RegNew,iMul2Reg,iMul2RegNew,iDivReg,iDivRegNew;
-
-  struct RReg {
-    // Control Signals
-    bool bubble;
-    uint32_t stall;
-    RISCV::RegId rs1, rs2;
-    uint64_t pc;
-    RISCV::Inst inst;
-    int64_t op1;
-    int64_t op2;
-    RISCV::RegId dest;
-    int64_t offset;
-    FunctionalUnit unit;
-    bool predictedBranch;
-  } rIntReg,rIntRegNew,rAddReg,rAddRegNew,rMul1Reg,rMul1RegNew,rMul2Reg,rMul2RegNew,rDivReg,rDivRegNew;
-  struct EReg {
-    // Control Signals
-    bool bubble;
-    uint32_t stall;
-    uint64_t pc;
-    RISCV::Inst inst;
-    int64_t op1;
-    int64_t op2;
-    bool writeReg;
-    RISCV::RegId destReg;
-    int64_t out;
-    bool writeMem;
-    bool readMem;
-    bool readSignExt;
-    uint32_t memLen;
-    FunctionalUnit unit;
-    bool branch;
-  } eIntReg,eIntRegNew,eAddReg,eAddRegNew,eMul1Reg,eMul1RegNew,eMul2Reg,eMul2RegNew,eDivReg,eDivRegNew;;
-
-
   // Pipeline Related Variables
   // To avoid older values(in MEM) overriding newer values(in EX)
   bool executeWriteBack;
   RISCV::RegId executeWBReg;
   bool memoryWriteBack;
   RISCV::RegId memoryWBReg;
-
-  
   struct History {
     uint32_t instCount;
     uint32_t cycleCount;
     uint32_t stalledCycleCount;
 
-    uint32_t predictedBranch; // Number of branch that is predicted successfully
-    uint32_t unpredictedBranch; // Number of branch that is not predicted
-                                // successfully
-
     uint32_t dataHazardCount;
+    uint32_t stallDataHazardCount;
     uint32_t controlHazardCount;
     uint32_t memoryHazardCount;
+    uint32_t structureHazardCount;
+    uint32_t stallStructureHazardCount;
+    
 
     std::vector<std::string> instRecord;
     std::vector<std::string> regRecord;
@@ -118,11 +75,6 @@ private:
     std::string memoryDump;
   } history;
 
-  // void fetch();
-  // void decode();
-  // void excecute();
-  // void memoryAccess();
-  // void writeBack();
   void issue(uint64_t instPC);
   void read(uint64_t instPC);
   void execute(uint64_t instPC);

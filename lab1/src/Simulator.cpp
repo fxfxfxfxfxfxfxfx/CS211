@@ -36,12 +36,6 @@ void Simulator::initStack(uint32_t baseaddr, uint32_t maxSize) {
 
 void Simulator::simulate() {
   // Main Simulation Loop
-  struct snapShotUnit
-  {
-    uint64_t pc;
-    instCompleteSchedule instSc;
-  }tem;
-  vector<snapShotUnit> snapShot;
   while (true) {
     if (this->reg[0] != 0) {
       // Some instruction might set this register to zero
@@ -51,31 +45,30 @@ void Simulator::simulate() {
     for(int i=0;i<this->scoreboard->instStatus.size();i++){
       tem.pc=this->scoreboard->instStatus[i].pc;
       tem.instSc=this->scoreboard->instStatus[i].instSchedule;
-      snapShot.push_back(tem);
+      this->snapShot.push_back(tem);
     }
 
     if (this->reg[REG_SP] < this->stackBase - this->maximumStackSize) {
       this->panic("Stack Overflow!\n");
     }
-    
     if(!this->scoreboard->pause)
       this->issue(this->pc);
-     for(int i=0;i<snapShot.size();i++){
-      if(snapShot[i].instSc==issuedPeriod){
-        this->read(snapShot[i].pc);
+     for(int i=0;i<this->snapShot.size();i++){
+      if(this->snapShot[i].instSc==issuedPeriod){
+        this->read(this->snapShot[i].pc);
       }
     }
-     for(int i=0;i<snapShot.size();i++){
-      if(snapShot[i].instSc==readedPeriod){
-        this->execute(snapShot[i].pc);
+     for(int i=0;i<this->snapShot.size();i++){
+      if(this->snapShot[i].instSc==readedPeriod){
+        this->execute(this->snapShot[i].pc);
       }
     }
-     for(int i=0;i<snapShot.size();i++){
-      if(snapShot[i].instSc==executePeriod)
-        this->writeBack(snapShot[i].pc);
+     for(int i=0;i<this->snapShot.size();i++){
+      if(this->snapShot[i].instSc==executePeriod)
+        this->writeBack(this->snapShot[i].pc);
     }
 
-    snapShot.clear();
+    this->snapShot.clear();
     this->history.cycleCount++;
     this->history.regRecord.push_back(this->getRegInfoStr());
     if (this->history.regRecord.size() >= 100000) { // Avoid using up memory
@@ -532,29 +525,31 @@ void Simulator::issue(uint64_t instPC) {
     char buf[4096];
     sprintf(buf, "0x%lx: %s\n", this->pc, inststr.c_str());
     this->history.instRecord.push_back(buf);
-
-    
   } else { // 16 bit instruction
     this->panic(
         "Current implementation does not support 16bit RV64C instructions!\n");
   }
-  
   if (instname != INSTNAME[insttype]) {
     this->panic("Unmatch instname %s with insttype %d\n", instname.c_str(),
                 insttype);
   }
-  
-
 // Determine whether the functional unit is occupied
   if (verbose) {
     printf("issue: %s,pc=%x\n", INSTNAME[insttype],instPC);
   }
-
-  if(!this->scoreboard->isFuncUnitFree(insttype)||!this->scoreboard->isDestBlank(dest)||this->scoreboard->pause){
+  if(!this->scoreboard->isFuncUnitFree(insttype)){
+    this->history.structureHazardCount++;
+    return;
+  }
+  if(!this->scoreboard->isDestBlank(dest)){
+    this->history.dataHazardCount++;
+  }
+  if(!this->scoreboard->isDestBlank(dest)||this->scoreboard->pause){
     return;
   }
   else{  
     this->scoreboard->updateFetchInstStatus(this->pc);
+    this->history.instCount++;
     for(int i=0;i<this->scoreboard->instStatus.size();i++){
       if(this->scoreboard->instStatus[i].pc==instPC){
         this->pc = this->pc + len;
@@ -570,8 +565,10 @@ void Simulator::issue(uint64_t instPC) {
       }
     }
   }
-  if(isBranch(insttype)||isJump(insttype))
+  if(isBranch(insttype)||isJump(insttype)){
     this->scoreboard->pause=true;
+    this->history.controlHazardCount++;
+  }
 }
 
 void Simulator::read(uint64_t instPC) {
@@ -606,6 +603,8 @@ void Simulator::read(uint64_t instPC) {
     }
     this->scoreboard->updateReadFuncStatus(funit);
     this->scoreboard->updateReadInstStatus(instPC);
+  }{
+    this->history.dataHazardCount++;
   }
   }
 }
@@ -636,7 +635,6 @@ void Simulator::execute(uint64_t instPC) {
   if (verbose) {
     printf("execute: %s,pc=%x\n", INSTNAME[inst],instPC);
   }
-  this->history.instCount++;
   if(isReadMem(inst)&&this->scoreboard->unit[funit].readMemOver){
     this->scoreboard->unit[funit].remainingPeriod--;
     if(this->scoreboard->unit[funit].remainingPeriod==0){
@@ -872,18 +870,14 @@ void Simulator::execute(uint64_t instPC) {
   if (isJump(inst)) {
     // Control hazard here
     this->pc = dRegPC;
-    this->history.controlHazardCount++;
   }
   //处理分支
   if (isBranch(inst)) {
     if (branch) {
       this->pc=dRegPC;
-      this->history.predictedBranch++;
     } else {
       // Control Hazard Here
       this->scoreboard->pause=false;
-      this->history.unpredictedBranch++;
-      this->history.controlHazardCount++;
     }
   }
   //处理访存
@@ -982,6 +976,7 @@ void Simulator::writeBack(uint64_t instPC) {
     printf("writeback: %s,pc=%x\n", INSTNAME[inst],instPC);
   }
   if(!writeReg||this->scoreboard->isDestRead(destReg)){
+    this->history.dataHazardCount++;
     this->reg[destReg]=out;
     this->scoreboard->updateWriteBackFuncStatus(funit,destReg);
     this->scoreboard->updateWritebackInstStatus(instPC);
@@ -1126,15 +1121,16 @@ void Simulator::printInfo() {
 
 void Simulator::printStatistics() {
   printf("------------ STATISTICS -----------\n");
-  printf("Number of Instructions: %u\n", this->history.instCount);
-  printf("Number of Cycles: %u\n", this->history.cycleCount);
-  printf("Avg Cycles per Instrcution: %.4f\n",
-         (float)this->history.cycleCount / this->history.instCount);
-  printf("Number of Control Hazards: %u\n",
-         this->history.controlHazardCount);
+  // printf("Number of Instructions: %u\n", this->history.instCount);
+  // printf("Number of Cycles: %u\n", this->history.cycleCount);
+  // printf("Avg Cycles per Instrcution: %.4f\n",
+  //        (float)this->history.cycleCount / this->history.instCount);
+  // printf("Number of Control Hazards: %u\n",
+  //        this->history.controlHazardCount);
   printf("Number of Data Hazards: %u\n", this->history.dataHazardCount);
-  printf("Number of Memory Hazards: %u\n",
-         this->history.memoryHazardCount);
+  // printf("Number of Stall Because Data Hazards: %u\n", this->history.stallDataHazardCount);
+  // printf("Cycles of structureHazardCount: %u\n",this->history.structureHazardCount);
+  // printf("Number of Stall Because Struct Hazards: %u\n", this->history.stallStructureHazardCount);
   printf("-----------------------------------\n");
   //this->memory->printStatistics();
 }
@@ -1142,7 +1138,6 @@ void Simulator::printStatistics() {
 std::string Simulator::getRegInfoStr() {
   std::string str;
   char buf[65536];
-
   str += "------------ CPU STATE ------------\n";
   sprintf(buf, "PC: 0x%lx\n", this->pc);
   str += buf;

@@ -8,12 +8,13 @@
 using namespace std;
 using namespace RISCV;
 
+// Scoreboard Data Structure
 class Scoreboard{
 public:
-// Scoreboard Data Structure
     bool pause;
     struct UnitStatus
     {
+        uint64_t pc;
         bool busy;
         RISCV::FunctionalUnit name;
         uint32_t remainingPeriod;
