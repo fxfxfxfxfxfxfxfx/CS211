@@ -9,6 +9,8 @@
 
 #include "Cache.h"
 
+std::deque<uint32_t> traceList; //用来记录optinal替换算法中的访问
+
 Cache::Cache(MemoryManager *manager, Policy policy, Cache *lowerCache,
              bool writeBack, bool writeAllocate,replacePolicy repStrategy) {
   this->referenceCounter = 0;
@@ -63,6 +65,7 @@ uint8_t Cache::getByte(uint32_t addr, uint32_t *cycles) {
     this->statistics.numHit++;
     this->statistics.totalCycles += this->policy.hitLatency;
     this->blocks[blockId].lastReference = this->referenceCounter;
+    this->blocks[blockId].rrpv = 0;
     if (cycles) *cycles = this->policy.hitLatency;
     return this->blocks[blockId].data[offset];
   }
@@ -95,6 +98,7 @@ void Cache::setByte(uint32_t addr, uint8_t val, uint32_t *cycles) {
     this->statistics.totalCycles += this->policy.hitLatency;
     this->blocks[blockId].modified = true;
     this->blocks[blockId].lastReference = this->referenceCounter;
+    this->blocks[blockId].rrpv = 0;
     this->blocks[blockId].data[offset] = val;
     if (!this->writeBack) {
       this->writeBlockToLowerLevel(this->blocks[blockId]);
@@ -216,6 +220,7 @@ void Cache::loadBlockFromLowerLevel(uint32_t addr, uint32_t *cycles) {
   b.id = this->getId(addr);
   b.size = blockSize;
   b.data = std::vector<uint8_t>(b.size);
+  b.rrpv = (1<<this->M)-2;
   uint32_t bits = this->log2i(blockSize);
   uint32_t mask = ~((1 << bits) - 1);
   uint32_t blockAddrBegin = addr & mask;
@@ -242,21 +247,52 @@ void Cache::loadBlockFromLowerLevel(uint32_t addr, uint32_t *cycles) {
   this->blocks[replaceId] = b;
 }
 
-uint32_t Cache::getReplacementBlockId(uint32_t begin, uint32_t end) {
+uint32_t Cache::getReplacementBlockId(uint32_t begin, uint32_t end,replacePolicy strategy) {
   // Find invalid block first
+  uint32_t id=begin/this->policy.associativity;
   for (uint32_t i = begin; i < end; ++i) {
-    if (!this->blocks[i].valid)
+    if (!this->blocks[i].valid){
       return i;
+    }
   }
-
-  // Otherwise use LRU
   uint32_t resultId = begin;
   uint32_t min = this->blocks[begin].lastReference;
-  for (uint32_t i = begin; i < end; ++i) {
-    if (this->blocks[i].lastReference < min) {
-      resultId = i;
-      min = this->blocks[i].lastReference;
+  uint32_t max = getNext(getAddr(this->blocks[begin]));
+  switch (strategy)
+  {
+  case LRU:
+    for (uint32_t i = begin; i < end; ++i) {
+      if (this->blocks[i].lastReference < min) {
+        resultId = i;
+        min = this->blocks[i].lastReference;
+      }
     }
+    return resultId;
+    break;
+  case RRIP:
+    while(true){
+      for(uint32_t i = begin; i<end;i++){
+        if(this->blocks[i].rrpv == (uint32_t)((1 << this->M)-1)){
+          resultId = i;
+          return resultId;
+        }
+      }
+      for(uint32_t i = begin; i<end;i++){
+        this->blocks[i].rrpv++;
+      }
+    }
+  break;
+    case OPTIMAL:
+    for (uint32_t i = begin; i < end; ++i){
+      if(getNext(getAddr(this->blocks[i]))>max){
+        resultId=i;
+        max=getNext(getAddr(this->blocks[i]));
+      }
+    }
+    break;
+  default:
+    fprintf(stderr, "Error: Invalid replacement strategy!\n");
+    break;
   }
   return resultId;
 }
@@ -313,4 +349,16 @@ uint32_t Cache::getAddr(Cache::Block &b) {
   uint32_t offsetBits = log2i(policy.blockSize);
   uint32_t idBits = log2i(policy.blockNum / policy.associativity);
   return (b.tag << (offsetBits + idBits)) | (b.id << offsetBits);
+}
+uint32_t Cache::getTagId(uint32_t addr){
+  uint32_t bits = log2i(policy.blockSize);
+  addr=addr>>bits;
+  return addr<<bits;
+}
+uint32_t Cache::getNext(uint32_t addr){
+  for(uint32_t i=0;i<traceList.size();i++){
+    if(getTagId(addr)==getTagId(traceList[i]))
+      return i;
+  }
+  return UINT32_MAX;
 }

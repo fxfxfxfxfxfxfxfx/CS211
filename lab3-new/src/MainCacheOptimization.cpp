@@ -15,6 +15,7 @@
 #include "Debug.h"
 #include "MemoryManager.h"
 
+extern std::deque<uint32_t> traceList;
 bool parseParameters(int argc, char **argv);
 void printUsage();
 
@@ -46,7 +47,19 @@ int main(int argc, char **argv) {
   l2cache = new Cache(memory, l2policy);
   l1cache = new Cache(memory, l1policy, l2cache);
   memory->setCache(l1cache);
-
+  //读访存测试为了实现optimal
+  std::ifstream trace1(traceFilePath);
+  if (!trace1.is_open()) {
+    printf("Unable to open file %s\n", traceFilePath);
+    exit(-1);
+  }
+  char type; //'r' for read, 'w' for write
+  uint32_t addr;
+  while (trace1 >> type >> std::hex >> addr) {
+    if (!memory->isPageExist(addr))
+      traceList.push_back(addr);
+  }
+  printf("size=%d\n",traceList.size());
   // Read and execute trace in cache-trace/ folder
   std::ifstream trace(traceFilePath);
   if (!trace.is_open()) {
@@ -54,16 +67,16 @@ int main(int argc, char **argv) {
     exit(-1);
   }
 
-  char type; //'r' for read, 'w' for write
-  uint32_t addr;
   while (trace >> type >> std::hex >> addr) {
     if (!memory->isPageExist(addr))
       memory->addPage(addr);
     switch (type) {
     case 'r':
+      traceList.pop_front();
       memory->getByte(addr);
       break;
     case 'w':
+      traceList.pop_front();
       memory->setByte(addr, 0);
       break;
     default:

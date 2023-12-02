@@ -91,7 +91,7 @@ private:
 
   void initCache();
   void loadBlockFromLowerLevel(uint32_t addr, uint32_t *cycles = nullptr);
-  uint32_t getReplacementBlockId(uint32_t begin, uint32_t end);
+  uint32_t getReplacementBlockId(uint32_t begin, uint32_t end,replacePolicy strategy=OPTIMAL);
   void writeBlockToLowerLevel(Block &b);
 
   // Utility Functions
@@ -102,6 +102,8 @@ private:
   uint32_t getId(uint32_t addr);
   uint32_t getOffset(uint32_t addr);
   uint32_t getAddr(Block &b);
+  uint32_t getTagId(uint32_t);
+  uint32_t getNext(uint32_t addr);
 };
 
 #endif
