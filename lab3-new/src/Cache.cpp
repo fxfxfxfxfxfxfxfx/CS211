@@ -12,12 +12,14 @@
 std::deque<uint32_t> traceList; //用来记录optinal替换算法中的访问
 
 Cache::Cache(MemoryManager *manager, Policy policy, Cache *lowerCache,
-             bool writeBack, bool writeAllocate,replacePolicy repStrategy) {
+             bool writeBack, bool writeAllocate,replacePolicy repStrategy,
+             inclusivePolicy clusStrategy) {
   this->referenceCounter = 0;
   this->memory = manager;
   this->policy = policy;
   this->lowerCache = lowerCache;
   this->repStrategy=repStrategy;
+  this->clusStrategy=clusStrategy;
   if (!this->isPolicyValid()) {
     fprintf(stderr, "Policy invalid!\n");
     exit(-1);
@@ -238,6 +240,17 @@ void Cache::loadBlockFromLowerLevel(uint32_t addr, uint32_t *cycles) {
   uint32_t blockIdEnd = (id + 1) * this->policy.associativity;
   uint32_t replaceId = this->getReplacementBlockId(blockIdBegin, blockIdEnd);
   Block replaceBlock = this->blocks[replaceId];
+  //处理包含策略
+  if(this->clusStrategy==EXCLUSIVE)
+    this->expelSameBlockInLowerCache(addr);
+  if(this->clusStrategy==INCLUSIVE&&this->higherCache!=nullptr){
+    int blockId;
+    if ((blockId = this->higherCache->getBlockId(addr)) != -1){
+      replaceBlock = this->higherCache->blocks[blockId];
+      this->higherCache->blocks[blockId].valid=false;
+    }
+  }
+
   if (this->writeBack && replaceBlock.valid &&
       replaceBlock.modified) { // write back to memory
     this->writeBlockToLowerLevel(replaceBlock);
@@ -361,4 +374,18 @@ uint32_t Cache::getNext(uint32_t addr){
       return i;
   }
   return UINT32_MAX;
+}
+
+//以下方法用于处理包含策略
+void Cache::setHigherCache(Cache* higherCache){
+  this->higherCache=higherCache;
+}
+//用于维护exclusive策略下的Cache关系
+void Cache::expelSameBlockInLowerCache(uint32_t addr){
+  if(this->lowerCache!=nullptr){
+    int blockId;
+    if ((blockId = this->lowerCache->getBlockId(addr)) != -1){
+      this->lowerCache->blocks[blockId].valid=false;
+    }
+  }
 }

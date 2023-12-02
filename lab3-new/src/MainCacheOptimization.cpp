@@ -46,6 +46,7 @@ int main(int argc, char **argv) {
   memory = new MemoryManager();
   l2cache = new Cache(memory, l2policy);
   l1cache = new Cache(memory, l1policy, l2cache);
+  l2cache->setHigherCache(l1cache);
   memory->setCache(l1cache);
   //读访存测试为了实现optimal
   std::ifstream trace1(traceFilePath);

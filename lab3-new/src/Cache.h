@@ -66,12 +66,13 @@ public:
 
   Cache(MemoryManager *manager, Policy policy, Cache *lowerCache = nullptr,
         bool writeBack = true, bool writeAllocate = true,
-        replacePolicy repStrategy=LRU);
+        replacePolicy repStrategy=LRU,inclusivePolicy clusStrategy=INCLUSIVE);
 
   bool inCache(uint32_t addr);
   uint32_t getBlockId(uint32_t addr);
   uint8_t getByte(uint32_t addr, uint32_t *cycles = nullptr);
   void setByte(uint32_t addr, uint8_t val, uint32_t *cycles = nullptr);
+  void setHigherCache(Cache* higherCache);
 
   void printInfo(bool verbose);
   void printStatistics();
@@ -86,13 +87,16 @@ private:
   uint32_t M=4;        //用于保存RRIP中的M
   MemoryManager *memory;
   Cache *lowerCache;
+  Cache *higherCache;
+  inclusivePolicy clusStrategy;
   Policy policy;
   std::vector<Block> blocks;
 
   void initCache();
   void loadBlockFromLowerLevel(uint32_t addr, uint32_t *cycles = nullptr);
-  uint32_t getReplacementBlockId(uint32_t begin, uint32_t end,replacePolicy strategy=OPTIMAL);
+  uint32_t getReplacementBlockId(uint32_t begin, uint32_t end,replacePolicy strategy=LRU);
   void writeBlockToLowerLevel(Block &b);
+  void expelSameBlockInLowerCache(uint32_t addr);
 
   // Utility Functions
   bool isPolicyValid();
