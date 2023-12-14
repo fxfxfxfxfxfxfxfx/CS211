@@ -14,7 +14,7 @@
 #include "Cache.h"
 #include "Debug.h"
 #include "MemoryManager.h"
-
+extern std::deque<uint32_t> traceList;
 bool parseParameters(int argc, char **argv);
 void printUsage();
 
@@ -45,26 +45,36 @@ int main(int argc, char **argv) {
   memory = new MemoryManager();
   l2cache = new Cache(memory, l2policy);
   l1cache = new Cache(memory, l1policy, l2cache);
+  l2cache->setHigherCache(l1cache);
+  // victim = new Cache(memory,)
   memory->setCache(l1cache);
 
   // Read and execute trace in cache-trace/ folder
-  std::ifstream trace(traceFilePath);
-  if (!trace.is_open()) {
+  std::ifstream trace1(traceFilePath);
+  if (!trace1.is_open()) {
     printf("Unable to open file %s\n", traceFilePath);
     exit(-1);
   }
-
   char type; //'r' for read, 'w' for write
   uint32_t addr;
+  while (trace1 >> type >> std::hex >> addr) {
+    if (!memory->isPageExist(addr))
+      traceList.push_back(addr);
+  }
+  printf("size=%d\n",traceList.size());
+  std::ifstream trace(traceFilePath);
   while (trace >> type >> std::hex >> addr) {
     if (!memory->isPageExist(addr))
       memory->addPage(addr);
+      printf("00000000\n");
     switch (type) {
     case 'r':
       memory->getByte(addr);
+      traceList.pop_front();
       break;
     case 'w':
       memory->setByte(addr, 0);
+      traceList.pop_front();
       break;
     default:
       dbgprintf("Illegal type %c\n", type);

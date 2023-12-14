@@ -9,11 +9,21 @@
 
 #include <cstdint>
 #include <vector>
-
+#include <queue>
+#include <deque>
 #include "MemoryManager.h"
-
+enum inclusivePolicy{
+  NINE,
+  INCLUSIVE,
+  EXCLUSIVE,
+};
+enum replacePolicy{
+  LRU,
+  RRIP,
+  FIFO,
+  OPTIMAL,
+};
 class MemoryManager;
-
 class Cache {
 public:
   struct Policy {
@@ -33,6 +43,8 @@ public:
     uint32_t id;
     uint32_t size;
     uint32_t lastReference;
+    uint32_t rrpv;
+    uint32_t fifo;
     std::vector<uint8_t> data;
     Block() {}
     Block(const Block &b)
@@ -51,13 +63,17 @@ public:
   };
 
   Cache(MemoryManager *manager, Policy policy, Cache *lowerCache = nullptr,
-        bool writeBack = true, bool writeAllocate = true);
+        Cache *higherCache=nullptr,bool writeBack = true, bool writeAllocate = true,
+        replacePolicy repStrategy=LRU,inclusivePolicy clusStrategy=NINE,
+        Cache *victimCache=nullptr);
 
   bool inCache(uint32_t addr);
   uint32_t getBlockId(uint32_t addr);
   uint8_t getByte(uint32_t addr, uint32_t *cycles = nullptr);
+  uint8_t getByteFromVictim(uint32_t addr,uint32_t *cycles = nullptr);
   void setByte(uint32_t addr, uint8_t val, uint32_t *cycles = nullptr);
-
+  void setHigherCache(Cache* higherCache);
+  void setVictimCache(Cache* victimCache);
   void printInfo(bool verbose);
   void printStatistics();
 
@@ -67,15 +83,26 @@ private:
   uint32_t referenceCounter;
   bool writeBack;     // default true
   bool writeAllocate; // default true
+  replacePolicy strategy;
+  uint32_t M=4;
   MemoryManager *memory;
   Cache *lowerCache;
+  Cache *higherCache;
+  Cache *victimCache;
   Policy policy;
+  replacePolicy repStrategy;
+  inclusivePolicy clusStrategy;
   std::vector<Block> blocks;
-
+  std::vector<std::vector<uint32_t>> FIFOQUEUE;
   void initCache();
   void loadBlockFromLowerLevel(uint32_t addr, uint32_t *cycles = nullptr);
-  uint32_t getReplacementBlockId(uint32_t begin, uint32_t end);
+  bool loadBlockFromVictim(uint32_t addr,uint32_t *cycles = nullptr);
+  void loadBlockFromVictimToLowerCache(uint32_t addr,Block victimBlock,uint32_t *cycles = nullptr);
+  void expeBlockFromVictim(uint32_t addr);
+  uint32_t getReplacementBlockId(uint32_t begin, uint32_t end,replacePolicy strategy=LRU);
   void writeBlockToLowerLevel(Block &b);
+  void writeBlockToVictim(Block &b);
+  void expelSameBlockInLowerCache(uint32_t addr);
 
   // Utility Functions
   bool isPolicyValid();
@@ -85,6 +112,8 @@ private:
   uint32_t getId(uint32_t addr);
   uint32_t getOffset(uint32_t addr);
   uint32_t getAddr(Block &b);
+  uint32_t getTagId(uint32_t);
+  uint32_t getNext(uint32_t);
 };
 
 #endif

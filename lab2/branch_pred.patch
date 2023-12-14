@@ -1,0 +1,16 @@
+diff --git a/src/Simulator.cpp b/src/Simulator.cpp
+index cacda85..8777bff 100755
+--- a/src/Simulator.cpp
++++ b/src/Simulator.cpp
+@@ -942,7 +942,10 @@ void Simulator::excecute() {
+       this->history.predictedBranch++;
+     } else {
+       // Control Hazard Here
+-      this->pc = this->anotherPC;
++      if (branch)
++        this->pc = dRegPC;
++      else
++        this->pc = this->dReg.pc + 4;
+       this->fRegNew.bubble = true;
+       this->dRegNew.bubble = true;
+       this->history.unpredictedBranch++;
