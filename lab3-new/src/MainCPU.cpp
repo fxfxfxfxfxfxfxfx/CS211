@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
   l2Policy.blockNum = l2Policy.cacheSize / l2Policy.blockSize;
   l2Policy.associativity = 8;
   l2Policy.hitLatency = 8;
-  l2Policy.missLatency = 20;
+  l2Policy.missLatency = 100;
 
   l3Policy.cacheSize = 8 * 1024 * 1024;
   l3Policy.blockSize = 64;
@@ -62,11 +62,14 @@ int main(int argc, char **argv) {
   l3Policy.associativity = 8;
   l3Policy.hitLatency = 20;
   l3Policy.missLatency = 100;
-
-  l3Cache = new Cache(&memory, l3Policy);
+  // l3Cache = new Cache(&memory, l3Policy);
   l2Cache = new Cache(&memory, l2Policy, l3Cache);
   l1Cache = new Cache(&memory, l1Policy, l2Cache);
-
+  l1Cache->setVictimCache(64*4);
+  l1Cache->setReplacePolicy(LRU);
+  l2Cache->setReplacePolicy(RRIP);
+  l1Cache->setInclusionPolicy(INCLUSIVE);
+  l2Cache->setInclusionPolicy(INCLUSIVE);
   memory.setCache(l1Cache);
 
   // Read ELF file
@@ -98,7 +101,6 @@ int main(int argc, char **argv) {
     printf("Dumping history to dump.txt...\n");
     simulator.dumpHistory();
   }
-
   delete l1Cache;
   delete l2Cache;
   delete l3Cache;

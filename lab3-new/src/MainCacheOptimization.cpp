@@ -29,13 +29,13 @@ int main(int argc, char **argv) {
   Cache::Policy l1policy, l2policy;
   l1policy.cacheSize = 32 * 1024;
   l1policy.blockSize = 64;
-  l1policy.blockNum = 32 * 1024 / 64;
-  l1policy.associativity = 8;
+  l1policy.blockNum = l1policy.cacheSize/l1policy.blockSize;
+  l1policy.associativity = 1;
   l1policy.hitLatency = 2;
   l1policy.missLatency = 8;
   l2policy.cacheSize = 256 * 1024;
   l2policy.blockSize = 64;
-  l2policy.blockNum = 256 * 1024 / 64;
+  l2policy.blockNum = l2policy.cacheSize/l2policy.blockSize;
   l2policy.associativity = 8;
   l2policy.hitLatency = 8;
   l2policy.missLatency = 100;
@@ -47,6 +47,7 @@ int main(int argc, char **argv) {
   l2cache = new Cache(memory, l2policy);
   l1cache = new Cache(memory, l1policy, l2cache);
   l2cache->setHigherCache(l1cache);
+  l1cache->setVictimCache(4*64);
   memory->setCache(l1cache);
   //读访存测试为了实现optimal
   std::ifstream trace1(traceFilePath);
@@ -67,7 +68,6 @@ int main(int argc, char **argv) {
     printf("Unable to open file %s\n", traceFilePath);
     exit(-1);
   }
-
   while (trace >> type >> std::hex >> addr) {
     if (!memory->isPageExist(addr))
       memory->addPage(addr);

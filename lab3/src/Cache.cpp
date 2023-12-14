@@ -3,18 +3,22 @@
  *
  * Created By He, Hao in 2019-04-27
  */
-
 #include <cstdio>
 #include <cstdlib>
 #include "Cache.h"
 std::deque<uint32_t> traceList;
 Cache::Cache(MemoryManager *manager, Policy policy, Cache *lowerCache,
-             bool writeBack, bool writeAllocate) {
+             Cache *higherCache,bool writeBack, bool writeAllocate,
+             replacePolicy repStrategy,inclusivePolicy clusStrategy,
+             Cache *victimCache) {
   this->referenceCounter = 0;
   this->memory = manager;
   this->policy = policy;
   this->lowerCache = lowerCache;
-  std::vector<std::queue<uint32_t>> tem(this->policy.blockNum/this->policy.associativity);
+  this->higherCache = higherCache;
+  this->clusStrategy = clusStrategy;
+  this->repStrategy = repStrategy;
+  std::vector<std::vector<uint32_t>> tem(this->policy.blockNum/this->policy.associativity);
   this->FIFOQUEUE=tem;
   if (!this->isPolicyValid()) {
     fprintf(stderr, "Policy invalid!\n");
@@ -71,7 +75,10 @@ uint8_t Cache::getByte(uint32_t addr, uint32_t *cycles) {
   // Else, find the data in memory or other level of cache
   this->statistics.numMiss++;
   this->statistics.totalCycles += this->policy.missLatency;
-  this->loadBlockFromLowerLevel(addr, cycles);
+  if (!this->loadBlockFromVictim(addr,cycles)) {
+    this->loadBlockFromLowerLevel(addr, cycles);
+  }
+  
 
   // The block is in top level cache now, return directly
   if ((blockId = this->getBlockId(addr)) != -1) {
@@ -229,29 +236,132 @@ void Cache::loadBlockFromLowerLevel(uint32_t addr, uint32_t *cycles) {
     } else 
       b.data[i - blockAddrBegin] = this->lowerCache->getByte(i, cycles);
   }
-
   // Find replace block
   uint32_t id = this->getId(addr);
   uint32_t blockIdBegin = id * this->policy.associativity;
   uint32_t blockIdEnd = (id + 1) * this->policy.associativity;
   uint32_t replaceId = this->getReplacementBlockId(blockIdBegin, blockIdEnd);
   Block replaceBlock = this->blocks[replaceId];
+  if(this->clusStrategy==EXCLUSIVE)
+    this->expelSameBlockInLowerCache(addr);
+  if(this->clusStrategy==INCLUSIVE&&this->higherCache!=nullptr){
+    int blockId;
+    if ((blockId = this->higherCache->getBlockId(addr)) != -1){
+      replaceBlock = this->higherCache->blocks[blockId];
+      this->higherCache->blocks[blockId].valid=false;
+    }
+  }
   if (this->writeBack && replaceBlock.valid &&
       replaceBlock.modified) { // write back to memory
+    if(this->clusStrategy==INCLUSIVE&&this->higherCache==nullptr){
+      this->writeBlockToVictim(replaceBlock);
+    }
     this->writeBlockToLowerLevel(replaceBlock);
     this->statistics.totalCycles += this->policy.missLatency;
   }
 
   this->blocks[replaceId] = b;
 }
+bool Cache::loadBlockFromVictim(uint32_t addr,uint32_t* cycles){
+  uint32_t blockSize = this->policy.blockSize;
 
+  // Initialize new block from memory
+  Block b;
+  b.valid = true;
+  b.modified = false;
+  b.tag = this->getTag(addr);
+  b.id = this->getId(addr);
+  b.size = blockSize;
+  b.data = std::vector<uint8_t>(b.size);
+  b.rrpv = (1<<this->M)-2;
+  uint32_t bits = this->log2i(blockSize);
+  uint32_t mask = ~((1 << bits) - 1);
+  uint32_t blockAddrBegin = addr & mask;
+  for (uint32_t i = blockAddrBegin; i < blockAddrBegin + blockSize; ++i) {
+    if (this->victimCache != nullptr) {
+      // b.data[i - blockAddrBegin] = this->lowerCache->getByte(i, cycles);
+      this->referenceCounter++;
+      this->statistics.numRead++;
+      // If in cache, return directly
+      int blockId;
+      if ((blockId = this->victimCache->getBlockId(addr)) != -1) {
+        uint32_t offset = this->victimCache->getOffset(addr);
+        this->victimCache->statistics.numHit++;
+        this->victimCache->statistics.totalCycles += this->victimCache->policy.hitLatency;
+        this->victimCache->blocks[blockId].lastReference = this->referenceCounter;
+        this->victimCache->blocks[blockId].rrpv = 0;
+        if (cycles) *cycles = this->victimCache->policy.hitLatency;
+        b.data[i - blockAddrBegin]=this->victimCache->blocks[blockId].data[offset];
+        this->victimCache->blocks[blockId].valid=false;
+        uint32_t id = this->victimCache->getId(addr);
+        uint32_t begin = id * this->victimCache->policy.associativity;
+        uint32_t end = (id + 1) * this->victimCache->policy.associativity;
+        for(uint32_t i = begin; i < end; ++i){
+          if(this->victimCache->FIFOQUEUE[id][i]==blockId)
+            this->FIFOQUEUE[id].erase(this->FIFOQUEUE[id].begin()+i);
+        }
+      }
+      else{
+        return false;
+      }
+      if(this->clusStrategy==EXCLUSIVE){
+        this->expeBlockFromVictim(addr);
+      }
+      if(this->clusStrategy==INCLUSIVE){
+        // this->loadBlockFromVictimToLowerCache
+        this->loadBlockFromVictimToLowerCache(addr,this->victimCache->blocks[blockId],cycles);
+      }
+      return true;
+    } 
+  }
+}
+void Cache::loadBlockFromVictimToLowerCache(uint32_t addr,Block victimBlock,uint32_t *cycles){
+  int blockId;
+  if ((blockId = this->lowerCache->getBlockId(addr)) == -1){
+    uint32_t blockSize = this->lowerCache->policy.blockSize;
+    Block b;
+    b.valid = true;
+    b.modified = false;
+    b.tag = this->lowerCache->getTag(addr);
+    b.id = this->lowerCache->getId(addr);
+    b.size = blockSize;
+    b.data = std::vector<uint8_t>(b.size);
+    b.rrpv = (1<<this->M)-2;
+    uint32_t bits = this->log2i(blockSize);
+    uint32_t mask = ~((1 << bits) - 1);
+    uint32_t blockAddrBegin = addr & mask;
+    for (uint32_t i = blockAddrBegin; i < blockAddrBegin + blockSize; ++i) {
+      b.data[i - blockAddrBegin] = this->lowerCache->getByteFromVictim(i, cycles);
+    }
+  }
+}
+uint8_t Cache::getByteFromVictim(uint32_t addr,uint32_t *cycles ){
+  int blockId;
+  if ((blockId = this->getBlockId(addr)) != -1) {
+    uint32_t offset = this->getOffset(addr);
+    this->statistics.numHit++;
+    this->statistics.totalCycles += this->policy.hitLatency;
+    this->blocks[blockId].lastReference = this->referenceCounter;
+    this->blocks[blockId].rrpv = 0;
+    if (cycles) *cycles = this->policy.hitLatency;
+    return this->blocks[blockId].data[offset];
+  }
+}
+
+void Cache::expeBlockFromVictim(uint32_t addr){
+  int blockId;
+  if ((blockId = this->lowerCache->getBlockId(addr)) != -1){
+    this->lowerCache->blocks[blockId].valid=false;
+  }
+}
 uint32_t Cache::getReplacementBlockId(uint32_t begin, uint32_t end,replacePolicy strategy) {
   // Find invalid block first
   uint32_t id=begin/this->policy.associativity;
+  auto it=this->FIFOQUEUE[id].begin();
   for (uint32_t i = begin; i < end; ++i) {
     if (!this->blocks[i].valid){
       if(strategy==FIFO)
-        this->FIFOQUEUE[id].push(i);
+        this->FIFOQUEUE[id].push_back(i);
       return i;
     }
   }
@@ -271,14 +381,15 @@ uint32_t Cache::getReplacementBlockId(uint32_t begin, uint32_t end,replacePolicy
     break;
   case FIFO:
     resultId=this->FIFOQUEUE[id].front();
-    this->FIFOQUEUE[id].push(resultId);
-    this->FIFOQUEUE[id].pop();
+    this->FIFOQUEUE[id].push_back(resultId);
+    
+    this->FIFOQUEUE[id].erase(it);
     return resultId;
     break;
   case RRIP:
     while(true){
       for(uint32_t i = begin; i<end;i++){
-        if(this->blocks[i].rrpv == ((1 << this->M)-1)){
+        if(this->blocks[i].rrpv == (uint32_t)((1 << this->M)-1)){
           resultId = i;
           return resultId;
         }
@@ -315,6 +426,33 @@ void Cache::writeBlockToLowerLevel(Cache::Block &b) {
     }
   }
 }
+void Cache::writeBlockToVictim(Cache::Block &b){
+  uint32_t addrBegin = this->getAddr(b);
+  if (this->victimCache != nullptr) {
+    for (uint32_t i = 0; i < b.size; ++i) {
+      for (uint32_t i = 0; i < b.size; ++i) {
+      this->victimCache->setByte(addrBegin + i, b.data[i]);
+      }
+    }
+  } 
+}
+void Cache::setHigherCache(Cache* higherCacher){
+  this->higherCache=higherCache;
+}
+
+void Cache::setVictimCache(Cache* victimCache){
+  this->victimCache=victimCache;
+}
+
+void Cache::expelSameBlockInLowerCache(uint32_t addr){
+  if(this->lowerCache!=nullptr){
+    int blockId;
+    if ((blockId = this->lowerCache->getBlockId(addr)) != -1){
+      this->lowerCache->blocks[blockId].valid=false;
+    }
+  }
+}
+
 
 bool Cache::isPowerOfTwo(uint32_t n) { return n > 0 && (n & (n - 1)) == 0; }
 

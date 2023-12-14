@@ -12,8 +12,7 @@
 std::deque<uint32_t> traceList; //用来记录optinal替换算法中的访问
 
 Cache::Cache(MemoryManager *manager, Policy policy, Cache *lowerCache,
-             bool writeBack, bool writeAllocate,replacePolicy repStrategy,
-             inclusivePolicy clusStrategy) {
+             bool writeBack, bool writeAllocate,inclusivePolicy clusStrategy) {
   this->referenceCounter = 0;
   this->memory = manager;
   this->policy = policy;
@@ -74,8 +73,14 @@ uint8_t Cache::getByte(uint32_t addr, uint32_t *cycles) {
 
   // Else, find the data in memory or other level of cache
   this->statistics.numMiss++;
-  this->statistics.totalCycles += this->policy.missLatency;
-  this->loadBlockFromLowerLevel(addr, cycles);
+  bool flag=this->loadBlockFromVictim(addr,cycles);
+  if(!flag){
+    this->loadBlockFromLowerLevel(addr, cycles);
+    this->statistics.totalCycles += this->policy.missLatency;
+  }
+  else{
+    this->statistics.totalCycles += 1;
+  }
 
   // The block is in top level cache now, return directly
   if ((blockId = this->getBlockId(addr)) != -1) {
@@ -91,7 +96,6 @@ uint8_t Cache::getByte(uint32_t addr, uint32_t *cycles) {
 void Cache::setByte(uint32_t addr, uint8_t val, uint32_t *cycles) {
   this->referenceCounter++;
   this->statistics.numWrite++;
-
   // If in cache, write to it directly
   int blockId;
   if ((blockId = this->getBlockId(addr)) != -1) {
@@ -109,15 +113,14 @@ void Cache::setByte(uint32_t addr, uint8_t val, uint32_t *cycles) {
     if (cycles) *cycles = this->policy.hitLatency;
     return;
   }
-
   // Else, load the data from cache
   // TODO: implement bypassing
   this->statistics.numMiss++;
   this->statistics.totalCycles += this->policy.missLatency;
 
   if (this->writeAllocate) {
-    this->loadBlockFromLowerLevel(addr, cycles);
-
+    if(!this->loadBlockFromVictim(addr,cycles))
+      this->loadBlockFromLowerLevel(addr, cycles);
     if ((blockId = this->getBlockId(addr)) != -1) {
       uint32_t offset = this->getOffset(addr);
       this->blocks[blockId].modified = true;
@@ -247,6 +250,9 @@ void Cache::loadBlockFromLowerLevel(uint32_t addr, uint32_t *cycles) {
     int blockId;
     if ((blockId = this->higherCache->getBlockId(addr)) != -1){
       replaceBlock = this->higherCache->blocks[blockId];
+      uint32_t temaddr=this->higherCache->getAddr(replaceBlock);
+      replaceBlock.tag=this->getTag(temaddr);
+      replaceBlock.id=this->getId(temaddr);
       this->higherCache->blocks[blockId].valid=false;
     }
   }
@@ -254,6 +260,9 @@ void Cache::loadBlockFromLowerLevel(uint32_t addr, uint32_t *cycles) {
   if (this->writeBack && replaceBlock.valid &&
       replaceBlock.modified) { // write back to memory
     this->writeBlockToLowerLevel(replaceBlock);
+    if(this->victimCache!=nullptr){
+      this->writeBlockToVictim(replaceBlock);
+    }
     this->statistics.totalCycles += this->policy.missLatency;
   }
 
@@ -383,6 +392,122 @@ void Cache::setHigherCache(Cache* higherCache){
 //用于维护exclusive策略下的Cache关系
 void Cache::expelSameBlockInLowerCache(uint32_t addr){
   if(this->lowerCache!=nullptr){
+    int blockId;
+    if ((blockId = this->lowerCache->getBlockId(addr)) != -1){
+      this->lowerCache->blocks[blockId].valid=false;
+    }
+  }
+}
+
+//用于victim cache的处理
+
+//添加victim cache
+void Cache::setVictimCache(uint32_t size){
+  Cache::Policy victimPolicy;
+  victimPolicy.cacheSize=size;
+  victimPolicy.blockSize=this->policy.blockSize;
+  victimPolicy.blockNum=victimPolicy.cacheSize/victimPolicy.blockSize;
+  victimPolicy.associativity=victimPolicy.cacheSize/victimPolicy.blockSize;
+  victimPolicy.hitLatency=9;
+  victimPolicy.missLatency=9;
+  Cache *victimCache=new Cache(nullptr,victimPolicy);
+  if(this->higherCache==nullptr&&this->lowerCache!=nullptr){
+    this->victimCache=victimCache;
+  }
+  else{
+    fprintf(stderr, "Only for L1 cache add victim cache\n");
+  }
+}
+void Cache::setReplacePolicy(replacePolicy rep){
+  this->repStrategy=rep;
+}
+void Cache::setInclusionPolicy(inclusivePolicy clu){
+  this->clusStrategy=clu;
+}
+bool Cache::loadBlockFromVictim(uint32_t addr,uint32_t *cycles ){
+  if(this->victimCache==nullptr){
+    return false;
+  }
+  // Initialize new block from memory
+  uint32_t blockSize = this->policy.blockSize;
+  Block b;
+  b.valid = true;
+  b.modified = false;
+  b.tag = this->getTag(addr);
+  b.id = this->getId(addr);
+  b.size = blockSize;
+  b.data = std::vector<uint8_t>(b.size);
+  uint32_t bits = this->log2i(blockSize);
+  uint32_t mask = ~((1 << bits) - 1);
+  uint32_t blockAddrBegin = addr & mask;
+  if(this->victimCache->inCache(addr)){
+    b.data=this->victimCache->blocks[this->victimCache->getBlockId(addr)].data;
+    //在victim中命中将其剔除
+    int blockId=this->victimCache->getBlockId(addr);
+    this->victimCache->blocks[blockId].valid=false;
+    for(uint32_t i=0;i<this->victimCache->FIFOQUEUE.size();i++){
+      if(this->victimCache->FIFOQUEUE[i]==blockId){
+        this->victimCache->FIFOQUEUE.erase(this->victimCache->FIFOQUEUE.begin()+i);
+        break;
+      }
+    }
+    if(this->clusStrategy==INCLUSIVE&&!this->lowerCache->inCache(addr)){
+      this->keepInclusiveFromVictim(addr,this->victimCache->blocks[blockId],cycles);
+    }
+    if(this->clusStrategy==EXCLUSIVE&&this->lowerCache->inCache(addr)){
+      this->keepExclusiveFromVictim(addr);
+    }
+    // Find replace block
+  uint32_t id = this->getId(addr);
+  uint32_t blockIdBegin = id * this->policy.associativity;
+  uint32_t blockIdEnd = (id + 1) * this->policy.associativity;
+  uint32_t replaceId = this->getReplacementBlockId(blockIdBegin, blockIdEnd);
+  Block replaceBlock = this->blocks[replaceId];
+
+
+  if (this->writeBack && replaceBlock.valid &&
+      replaceBlock.modified) { // write back to memory
+    this->writeBlockToLowerLevel(replaceBlock);
+    if(this->victimCache!=nullptr){
+      this->writeBlockToVictim(replaceBlock);
+    }
+    this->statistics.totalCycles += this->policy.missLatency;
+  }
+  this->blocks[replaceId] = b;
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+void Cache::writeBlockToVictim(Block &b){
+  uint32_t addrBegin = this->getAddr(b);
+  uint32_t replaceId = this->victimCache->deleteReplacementBlockIdVictim();
+  this->victimCache->blocks[replaceId]=b;
+  this->victimCache->blocks[replaceId].tag=this->victimCache->getTag(addrBegin);
+  this->victimCache->blocks[replaceId].id=this->victimCache->getId(addrBegin);
+  this->victimCache->blocks[replaceId].modified=true;
+  this->victimCache->blocks[replaceId].valid=true;
+  this->victimCache->FIFOQUEUE.push_back(replaceId);
+}
+uint32_t Cache::deleteReplacementBlockIdVictim(){
+  for(uint32_t i=0;i<this->policy.blockNum;i++){
+    if(!this->blocks[i].valid){
+      this->FIFOQUEUE.push_back(i);
+      return i;
+    }
+  }
+  uint32_t out=this->FIFOQUEUE.front();
+  this->FIFOQUEUE.erase(this->FIFOQUEUE.begin());
+  return out;
+}
+void Cache::keepInclusiveFromVictim(uint32_t addr,Block victimBlock,uint32_t *cycles){
+  this->writeBlockToLowerLevel(victimBlock);
+}
+
+void Cache::keepExclusiveFromVictim(uint32_t addr,uint32_t *cycles){
+    if(this->lowerCache!=nullptr){
     int blockId;
     if ((blockId = this->lowerCache->getBlockId(addr)) != -1){
       this->lowerCache->blocks[blockId].valid=false;

@@ -45,6 +45,8 @@ int main(int argc, char **argv) {
   memory = new MemoryManager();
   l2cache = new Cache(memory, l2policy);
   l1cache = new Cache(memory, l1policy, l2cache);
+  l2cache->setHigherCache(l1cache);
+  // victim = new Cache(memory,)
   memory->setCache(l1cache);
 
   // Read and execute trace in cache-trace/ folder
@@ -64,14 +66,15 @@ int main(int argc, char **argv) {
   while (trace >> type >> std::hex >> addr) {
     if (!memory->isPageExist(addr))
       memory->addPage(addr);
+      printf("00000000\n");
     switch (type) {
     case 'r':
-      traceList.pop_front();
       memory->getByte(addr);
+      traceList.pop_front();
       break;
     case 'w':
-      traceList.pop_front();
       memory->setByte(addr, 0);
+      traceList.pop_front();
       break;
     default:
       dbgprintf("Illegal type %c\n", type);

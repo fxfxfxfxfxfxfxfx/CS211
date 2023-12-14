@@ -66,14 +66,16 @@ public:
 
   Cache(MemoryManager *manager, Policy policy, Cache *lowerCache = nullptr,
         bool writeBack = true, bool writeAllocate = true,
-        replacePolicy repStrategy=LRU,inclusivePolicy clusStrategy=INCLUSIVE);
+        inclusivePolicy clusStrategy=NINE);
 
   bool inCache(uint32_t addr);
   uint32_t getBlockId(uint32_t addr);
   uint8_t getByte(uint32_t addr, uint32_t *cycles = nullptr);
   void setByte(uint32_t addr, uint8_t val, uint32_t *cycles = nullptr);
   void setHigherCache(Cache* higherCache);
-
+  void setVictimCache(uint32_t size);
+  void setReplacePolicy(replacePolicy rep);
+  void setInclusionPolicy(inclusivePolicy clu);
   void printInfo(bool verbose);
   void printStatistics();
 
@@ -88,14 +90,21 @@ private:
   MemoryManager *memory;
   Cache *lowerCache;
   Cache *higherCache;
+  Cache *victimCache;
+  std::vector<uint32_t> FIFOQUEUE;
   inclusivePolicy clusStrategy;
   Policy policy;
   std::vector<Block> blocks;
 
   void initCache();
   void loadBlockFromLowerLevel(uint32_t addr, uint32_t *cycles = nullptr);
+  bool loadBlockFromVictim(uint32_t addr, uint32_t *cycles = nullptr);
   uint32_t getReplacementBlockId(uint32_t begin, uint32_t end,replacePolicy strategy=LRU);
+  uint32_t deleteReplacementBlockIdVictim();
   void writeBlockToLowerLevel(Block &b);
+  void writeBlockToVictim(Block &b);
+  void keepInclusiveFromVictim(uint32_t addr,Block victimBlock,uint32_t *cycles = nullptr);
+  void keepExclusiveFromVictim(uint32_t addr,uint32_t *cycle=nullptr);
   void expelSameBlockInLowerCache(uint32_t addr);
 
   // Utility Functions

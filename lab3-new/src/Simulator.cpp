@@ -1290,7 +1290,7 @@ void Simulator::printStatistics() {
   printf("Number of Memory Hazards: %u\n",
          this->history.memoryHazardCount);
   printf("-----------------------------------\n");
-  //this->memory->printStatistics();
+  this->memory->printStatistics();
 }
 
 std::string Simulator::getRegInfoStr() {
