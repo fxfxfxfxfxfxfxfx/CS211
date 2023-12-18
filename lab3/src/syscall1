@@ -1,0 +1,27 @@
+//for system call 7 ,a0 number of array,a1 begin of array
+    beq a0,x0,end
+    lw a2,0,a1
+    addi a0,a0,-1
+loop:
+    beq a0,x0,end
+    lw a3,0,a1
+    bge a2,a3,loop2
+    addi a2,a3,0
+loop2:
+    addi a0,a0,-1
+    addi a1,a1,4
+    j loop
+end:
+    addi a0,a2,0                
+    sret
+
+0x02050263
+0x0005A603
+0xFFF50513
+0x00050C63
+0x0005A683
+0x00C6D463
+0x00068613
+0xFFF50513
+0xFEDFF06F
+0x00060513

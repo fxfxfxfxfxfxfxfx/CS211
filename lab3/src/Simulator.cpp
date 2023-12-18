@@ -54,6 +54,7 @@ const char *INSTNAME[]{
     "srli", "srai",  "add",   "sub",   "sll",   "slt",  "sltu", "xor",  "srl",
     "sra",  "or",    "and",   "ecall", "addiw", "mul",  "mulh", "div",  "rem",
     "lwu",  "slliw", "srliw", "sraiw", "addw",  "subw", "sllw", "srlw", "sraw",
+    "sret"
 };
 
 } // namespace RISCV
@@ -100,6 +101,9 @@ void Simulator::simulate() {
   eReg.bubble = true;
   mReg.bubble = true;
 
+  // Initialize system handler function
+  this->initHandler();
+
   // Main Simulation Loop
   while (true) {
     if (this->reg[0] != 0) {
@@ -122,8 +126,13 @@ void Simulator::simulate() {
     this->fetch();
     this->decode();
     this->excecute();
-    this->memoryAccess();
-    this->writeBack();
+    if(!this->resetSystem){
+      this->memoryAccess();
+    }
+    if(!this->resetSystem){
+      this->writeBack();
+    }
+    this->resetSystem=false;
 
     if (!this->fReg.stall) this->fReg = this->fRegNew;
     else this->fReg.stall--;
@@ -553,7 +562,12 @@ void Simulator::decode() {
         reg2 = REG_A7;
         dest = REG_A0;
         insttype = ECALL;
-      } else {
+      }
+      else if(funct3==0x0&&funct7==0x08){
+        instname = "sret";
+        insttype = SRET;
+      } 
+      else {
         this->panic("Unknown OP_SYSTEM inst with funct3 0x%x and funct7 0x%x\n",
                     funct3, funct7);
       }
@@ -929,8 +943,19 @@ void Simulator::excecute() {
     out = int64_t(int32_t((int32_t)op1 >> (int32_t)op2));
     break;
   case ECALL:
-    out = handleSystemCall(op1, op2);
-    writeReg = true;
+    if(op2==7||op2==8){
+      this->spec=dRegPC;
+      handleSystemCall(op2-7);
+      return;
+    }
+    else{
+      out = handlePseudoSystemCall(op1, op2);
+      writeReg = true;
+    }
+    break;
+  case SRET:
+    handleSytemReturn();
+    this->spec=0x0;
     break;
   default:
     this->panic("Unknown instruction type %d\n", inst);
@@ -1101,7 +1126,6 @@ void Simulator::memoryAccess() {
       this->panic("Unknown memLen %d\n", memLen);
     }
   }
-
   if (this->fReg.stall == datamem_stall_lock) 
     this->fReg.stall = std::max<uint32_t>(datamem_lat_lower_bound, cycles);
   if (this->dReg.stall == datamem_stall_lock)
@@ -1220,7 +1244,114 @@ void Simulator::writeBack() {
   // this->pc = this->mReg.pc;
 }
 
-int64_t Simulator::handleSystemCall(int64_t op1, int64_t op2) {
+// handle real system call  
+void Simulator::handleSystemCall(uint32_t x){
+  //wait for all instruction before system handler
+  this->memoryAccess();
+  this->writeBack();
+  this->mReg = this->mRegNew;
+  this->writeBack();
+
+  // save context
+  for(uint32_t i=0;i<REGNUM;i++){
+    if(i!=17&&i<10&&i>15){
+      this->contextReg[i]=this->reg[i];
+    }
+  }
+
+  // clear pipeline
+  memset(&this->fReg, 0, sizeof(this->fReg));
+  memset(&this->fRegNew, 0, sizeof(this->fRegNew));
+  memset(&this->dReg, 0, sizeof(this->dReg));
+  memset(&this->dRegNew, 0, sizeof(this->dReg));
+  memset(&this->eReg, 0, sizeof(this->eReg));
+  memset(&this->eRegNew, 0, sizeof(this->eRegNew));
+  memset(&this->mReg, 0, sizeof(this->mReg));
+  memset(&this->mRegNew, 0, sizeof(this->mRegNew));
+
+  // Reload pipleline
+  this->pc=this->sys_call_table[x];
+  this->resetSystem=true;
+}
+
+// handle system return from system
+void Simulator::handleSytemReturn(){
+  //wait for all instruction before system handler
+  this->memoryAccess();
+  this->writeBack();
+  this->mReg = this->mRegNew;
+  this->writeBack();
+
+  // restore context
+  for(uint32_t i=0;i<REGNUM;i++){
+    if(i!=17&&i<10&&i>15){
+      this->reg[i]=this->contextReg[i];
+    }
+  }
+
+  // clear pipeline
+  memset(&this->fReg, 0, sizeof(this->fReg));
+  memset(&this->fRegNew, 0, sizeof(this->fRegNew));
+  memset(&this->dReg, 0, sizeof(this->dReg));
+  memset(&this->dRegNew, 0, sizeof(this->dReg));
+  memset(&this->eReg, 0, sizeof(this->eReg));
+  memset(&this->eRegNew, 0, sizeof(this->eRegNew));
+  memset(&this->mReg, 0, sizeof(this->mReg));
+  memset(&this->mRegNew, 0, sizeof(this->mRegNew));
+
+  // Reload pipleline
+  this->pc=this->spec+4;
+  this->resetSystem=true;
+}
+
+// init handle function
+void Simulator::initHandler(){
+  uint32_t cycle=0;
+  uint64_t handler0Address=0x90000000;
+  this->sys_call_table[0]=handler0Address;
+  uint32_t handler0[10]={
+    0x00060693,
+    0x00050E63,
+    0x0005A703,
+    0x00E62023,
+    0xFFF50513,
+    0x00460613,
+    0x00458593,
+    0xFE9FF06F,
+    0x00068513,
+    0x10200073,
+  };
+  uint64_t handler1Address=0xA0000000;
+  this->sys_call_table[1]=handler1Address;
+  uint32_t handler1[12]={
+    0x02050463,
+    0x0005A603,
+    0xFFF50513,
+    0x00050E63,
+    0x0005A683,
+    0x00D65463,
+    0x00068613,
+    0xFFF50513,
+    0x00458593,
+    0xFE9FF06F,
+    0x00060513,
+    0x10200073,
+  };
+  for(int i=0;i<10;i++){
+    if(!this->memory->isAddrExist(handler0Address+i*4)){
+      this->memory->addPage(handler0Address+i*4);
+    }
+    this->memory->setInt(handler0Address+i*4,handler0[i],&cycle);
+  }
+  for(int i=0;i<12;i++){
+    if(!this->memory->isAddrExist(handler1Address+i*4)){
+      this->memory->addPage(handler1Address+i*4);
+    }
+    this->memory->setInt(handler1Address+i*4,handler1[i],&cycle);
+  }
+}
+
+int64_t Simulator::handlePseudoSystemCall(int64_t op1, int64_t op2) {
   int64_t type = op2; // reg a7
   int64_t arg1 = op1; // reg a0
   switch (type) {

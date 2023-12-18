@@ -23,6 +23,7 @@ public:
 
   bool addPage(uint32_t addr);
   bool isPageExist(uint32_t addr);
+  bool isAddrExist(uint32_t addr);
 
   bool copyFrom(const void *src, uint32_t dest, uint32_t len);
 
@@ -51,7 +52,6 @@ private:
   uint32_t getFirstEntryId(uint32_t addr);
   uint32_t getSecondEntryId(uint32_t addr);
   uint32_t getPageOffset(uint32_t addr);
-  bool isAddrExist(uint32_t addr);
 
   uint8_t **memory[1024];
   Cache *cache;

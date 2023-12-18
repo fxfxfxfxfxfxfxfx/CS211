@@ -11,5 +11,6 @@ char read_char();
 long long read_num();
 
 void print_f(float num);
-
+void set_array(int num,int*orignal,int*final);
+int get_arraymax(int num,int* orignal);
 #endif

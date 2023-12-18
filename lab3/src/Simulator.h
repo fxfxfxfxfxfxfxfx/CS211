@@ -118,6 +118,7 @@ enum Inst {
   SLLW = 51,
   SRLW = 52,
   SRAW = 53,
+  SRET = 54,
   UNKNOWN = -1,
 };
 extern const char *INSTNAME[];
@@ -242,6 +243,16 @@ private:
     bool writeReg;
     RISCV::RegId destReg;
   } mReg, mRegNew;
+  // store the PC of ecall
+  uint64_t spec;
+
+  // store the address of trap handler
+  uint64_t sys_call_table[2];
+
+  // store the context when syscall
+  uint64_t contextReg[RISCV::REGNUM];
+
+  bool resetSystem;
 
   // Pipeline Related Variables
   // To avoid older values(in MEM) overriding newer values(in EX)
@@ -364,7 +375,10 @@ private:
   void memoryAccess();
   void writeBack();
 
-  int64_t handleSystemCall(int64_t op1, int64_t op2);
+  void initHandler();
+  int64_t handlePseudoSystemCall(int64_t op1, int64_t op2);
+  void handleSystemCall(uint32_t x);
+  void handleSytemReturn();
 
   std::string getRegInfoStr();
   void panic(const char *format, ...);

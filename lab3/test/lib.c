@@ -50,3 +50,19 @@ void print_f(float num)
     asm("li a7, 6;"
         "scall");
 }
+
+void set_array(int num,int*orignal,int*final)
+{
+    asm("li a7,7;"
+        "scall"
+    );
+}
+
+int get_arraymax(int num,int* orignal)
+{
+    int result;
+    asm("li a7,8;"
+        "scall"
+    );
+    asm("addi %0, a0, 0" : "=r" (result));
+}

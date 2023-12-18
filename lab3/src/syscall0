@@ -1,0 +1,28 @@
+//for system call 6 ,a0 number of array ,a1 begin of original array, a2 begin of dest address
+    addi a3,a2,0
+loop:
+    beq a0,x0,end
+    lw a4,0,a1
+    sw a4,0,a2
+    addi a0,a0,-1
+    addi a2,a2,4
+    addi a1,a1,4
+    j loop
+end:
+    addi a0,a3,0
+    sret
+
+0x00060693
+0x00050E63
+0x0005A703
+0x00E62023
+0xFFF50513
+0x00460613
+0x00458593
+0xFE9FF06F
+0x00068513
+
+riscv64-unknown-elf-gcc -march=rv64imf ../test/test_mysyscall.c ../test/lib.h ../test/lib.c -o ../riscv-elf/test_mysyscall.riscv
+
+riscv64-unknown-elf-objdump -d ../riscv-elf/test_mysyscall.riscv > test_mysyscall.s
+
