@@ -10,55 +10,6 @@
 #include "Debug.h"
 #include "Simulator.h"
 
-namespace RISCV {
-
-const char *REGNAME[32] = {
-    "zero", // x0
-    "ra",   // x1
-    "sp",   // x2
-    "gp",   // x3
-    "tp",   // x4
-    "t0",   // x5
-    "t1",   // x6
-    "t2",   // x7
-    "s0",   // x8
-    "s1",   // x9
-    "a0",   // x10
-    "a1",   // x11
-    "a2",   // x12
-    "a3",   // x13
-    "a4",   // x14
-    "a5",   // x15
-    "a6",   // x16
-    "a7",   // x17
-    "s2",   // x18
-    "s3",   // x19
-    "s4",   // x20
-    "s5",   // x21
-    "s6",   // x22
-    "s7",   // x23
-    "s8",   // x24
-    "s9",   // x25
-    "s10",  // x26
-    "s11",  // x27
-    "t3",   // x28
-    "t4",   // x29
-    "t5",   // x30
-    "t6",   // x31
-};
-
-const char *INSTNAME[]{
-    "lui",  "auipc", "jal",   "jalr",  "beq",   "bne",  "blt",  "bge",  "bltu",
-    "bgeu", "lb",    "lh",    "lw",    "ld",    "lbu",  "lhu",  "sb",   "sh",
-    "sw",   "sd",    "addi",  "slti",  "sltiu", "xori", "ori",  "andi", "slli",
-    "srli", "srai",  "add",   "sub",   "sll",   "slt",  "sltu", "xor",  "srl",
-    "sra",  "or",    "and",   "ecall", "addiw", "mul",  "mulh", "div",  "rem",
-    "lwu",  "slliw", "srliw", "sraiw", "addw",  "subw", "sllw", "srlw", "sraw",
-};
-
-} // namespace RISCV
-
-using namespace RISCV;
 
 Simulator::Simulator(MemoryManager *memory, BranchPredictor *predictor) {
   this->memory = memory;
@@ -84,23 +35,29 @@ void Simulator::initStack(uint32_t baseaddr, uint32_t maxSize) {
 }
 
 void Simulator::simulate() {
-  // Initialize pipeline registers
-  memset(&this->fReg, 0, sizeof(this->fReg));
-  memset(&this->fRegNew, 0, sizeof(this->fRegNew));
-  memset(&this->dReg, 0, sizeof(this->dReg));
-  memset(&this->dRegNew, 0, sizeof(this->dReg));
-  memset(&this->eReg, 0, sizeof(this->eReg));
-  memset(&this->eRegNew, 0, sizeof(this->eRegNew));
-  memset(&this->mReg, 0, sizeof(this->mReg));
-  memset(&this->mRegNew, 0, sizeof(this->mRegNew));
+  // // Initialize pipeline registers
+  // memset(&this->fReg, 0, sizeof(this->fReg));
+  // memset(&this->fRegNew, 0, sizeof(this->fRegNew));
+  // memset(&this->dReg, 0, sizeof(this->dReg));
+  // memset(&this->dRegNew, 0, sizeof(this->dReg));
+  // memset(&this->eReg, 0, sizeof(this->eReg));
+  // memset(&this->eRegNew, 0, sizeof(this->eRegNew));
+  // memset(&this->mReg, 0, sizeof(this->mReg));
+  // memset(&this->mRegNew, 0, sizeof(this->mRegNew));
 
-  // Insert Bubble to later pipeline stages
-  fReg.bubble = true;
-  dReg.bubble = true;
-  eReg.bubble = true;
-  mReg.bubble = true;
+  // // Insert Bubble to later pipeline stages
+  // fReg.bubble = true;
+  // dReg.bubble = true;
+  // eReg.bubble = true;
+  // mReg.bubble = true;
 
   // Main Simulation Loop
+  struct snopEntry{
+    instCompleteSchedule period;
+    FunctionalUnit fu;
+    uint32_t entry;
+  } temSnopEntry;
+  vector<snopEntry> snop;
   while (true) {
     if (this->reg[0] != 0) {
       // Some instruction might set this register to zero
@@ -116,30 +73,139 @@ void Simulator::simulate() {
     this->executeWBReg = -1;
     this->memoryWriteBack = false;
     this->memoryWBReg = -1;
+    
+    
+    //suanshu
+    for(int i=0;i<this->ts.aluReservationStation.size();i++){
+      if(this->ts.isOperationJReady(this->ts.aluReservationStation[i].entry,ALUUNIT)&&
+      this->ts.isOperationKReady(this->ts.aluReservationStation[i].entry,ALUUNIT)){
+        temSnopEntry.fu=ALUUNIT;
+        temSnopEntry.entry=this->ts.aluReservationStation[i].entry;
+        temSnopEntry.period=issuedPeriod;
+        snop.push_back(temSnopEntry);
+        break;
+      }
+    }
+    for(int i=0;i<this->ts.mulReservationStation.size();i++){
+      if(this->ts.isOperationJReady(this->ts.mulReservationStation[i].entry,MULUNIT)&&
+      this->ts.isOperationKReady(this->ts.mulReservationStation[i].entry,MULUNIT)){
+        temSnopEntry.fu=MULUNIT;
+        temSnopEntry.entry=this->ts.mulReservationStation[i].entry;
+        temSnopEntry.period=issuedPeriod;
+        snop.push_back(temSnopEntry);
+        break;
+      }
+    }
+    for(int i=0;i<this->ts.divReservationStation.size();i++){
+      if(this->ts.isOperationJReady(this->ts.divReservationStation[i].entry,DIVUNIT)&&
+      this->ts.isOperationKReady(this->ts.divReservationStation[i].entry,DIVUNIT)){
+        temSnopEntry.fu=DIVUNIT;
+        temSnopEntry.entry=this->ts.divReservationStation[i].entry;
+        temSnopEntry.period=issuedPeriod;
+        snop.push_back(temSnopEntry);
+        break;
+      }
+    }
+
+    //store
+    for(int i=0;i<this->ts.memReservationStation.size();i++){
+      if(!isStoreMem(this->ts.memReservationStation[i].instruction))
+        break;
+      if(this->ts.isOperationJReady(this->ts.memReservationStation[i].entry,MEMUNIT)&&
+      this->ts.isOperationKReady(this->ts.memReservationStation[i].entry,MEMUNIT)){
+        temSnopEntry.fu=MEMUNIT;
+        temSnopEntry.entry=this->ts.memReservationStation[i].entry;
+        temSnopEntry.period=issuedPeriod;
+        snop.push_back(temSnopEntry);
+      }
+      else{
+        break;
+      }
+    }
+    // remain execute
+    for(int i=0;i<this->ts.reorderBuffer.size();i++){
+      if(this->ts.reorderBuffer[i].executeCycle>0&&this->ts.reorderBuffer[i].busy){
+        temSnopEntry.fu=MEMUNIT;
+        temSnopEntry.entry=this->ts.reorderBuffer[i].entry;
+        temSnopEntry.period=executePeriod;
+        snop.push_back(temSnopEntry);
+      }
+    }
+    //load
+    for(int i=0;i<this->ts.memReservationStation.size();i++){
+      if(isStoreMem(this->ts.memReservationStation[i].instruction))
+        continue;
+      if(this->ts.isOperationJReady(this->ts.memReservationStation[i].entry,MEMUNIT)&&
+      this->ts.isNotStoreBeforeLoadInRS(this->ts.memReservationStation[i].entry)&&
+      !this->ts.isStoreLoadSameAddress(this->ts.memReservationStation[i].entry)){
+        temSnopEntry.fu=MEMUNIT;
+        temSnopEntry.entry=this->ts.memReservationStation[i].entry;
+        temSnopEntry.period=issuedPeriod;
+        snop.push_back(temSnopEntry);
+        break;
+      }
+    }
+    //to do ?????????????
+    for(int i=0;i<this->ts.reorderBuffer.size();i++){
+      if(this->ts.reorderBuffer[i].executeCycle==0){
+        temSnopEntry.fu=MEMUNIT;
+        temSnopEntry.entry=this->ts.reorderBuffer[i].entry;
+        temSnopEntry.period=executePeriod;
+        snop.push_back(temSnopEntry);
+      }
+    }
+    
+  //todo commit
+    for(int i=0;i<this->ts.reorderBuffer.size();i++){
+      if(this->ts.reorderBuffer[i].ready){
+
+        temSnopEntry.fu=MEMUNIT;
+        temSnopEntry.entry=this->ts.reorderBuffer[i].entry;
+        temSnopEntry.period=writebackedPeriod;
+        snop.push_back(temSnopEntry);
+      }
+      else{
+        break;
+      }
+    }
+
+    if(!this->fetchPasue){
+      this->issue();
+    }
+
+    for(int i=0;i<snop.size();i++){
+      if(snop[i].period==issuedPeriod){
+        this->excecute(snop[i].fu,snop[i].entry);
+
+      }
+      else if(snop[i].period==executePeriod){
+        if(this->ts.isExecuteFinish(snop[i].entry)){
+          this->writeBack(snop[i].entry);
+        }
+        else{
+          this->ts.executeOneCycle(snop[i].entry);
+        }
+      }
+      else if(snop[i].period==writebackedPeriod){
+        this->commit(snop[i].entry);
+      }
+    }
+    
+    snop.clear();
 
     // THE EXECUTION ORDER of these functions are important!!!
     // Changing them will introduce strange bugs
-    this->fetch();
-    this->decode();
-    this->excecute();
-    this->memoryAccess();
-    this->writeBack();
+    // this->fetch();
+    // this->decode();
+    // this->excecute();
+    // this->memoryAccess();
+    // this->writeBack();
 
-    if (!this->fReg.stall) this->fReg = this->fRegNew;
-    else this->fReg.stall--;
-    if (!this->dReg.stall) this->dReg = this->dRegNew;
-    else this->dReg.stall--;
-    this->eReg = this->eRegNew;
-    this->mReg = this->mRegNew;
-    memset(&this->fRegNew, 0, sizeof(this->fRegNew));
-    memset(&this->dRegNew, 0, sizeof(this->dRegNew));
-    memset(&this->eRegNew, 0, sizeof(this->eRegNew));
-    memset(&this->mRegNew, 0, sizeof(this->mRegNew));
 
     // The Branch perdiction happens here to avoid strange bugs in branch prediction
-    if (!this->dReg.bubble && !this->dReg.stall && !this->fReg.stall && this->dReg.predictedBranch) {
-      this->pc = this->predictedPC;
-    }
+    // if (!this->dReg.bubble && !this->dReg.stall && !this->fReg.stall && this->dReg.predictedBranch) {
+    //   this->pc = this->predictedPC;
+    // }
 
     this->history.cycleCount++;
     this->history.regRecord.push_back(this->getRegInfoStr());
@@ -164,52 +230,63 @@ void Simulator::simulate() {
   }
 }
 
-void Simulator::fetch() {
+// void Simulator::fetch() {
+//   if (this->pc % 2 != 0) {
+//     this->panic("Illegal PC 0x%x!\n", this->pc);
+//   }
+
+//   uint32_t inst = this->memory->getInt(this->pc);
+//   uint32_t len = 4;
+
+//   if (this->verbose) {
+//     printf("Fetched instruction 0x%.8x at address 0x%lx\n", inst, this->pc);
+//   }
+
+//   this->fRegNew.bubble = false;
+//   this->fRegNew.stall = false;
+//   this->fRegNew.inst = inst;
+//   this->fRegNew.len = len;
+//   this->fRegNew.pc = this->pc;
+//   this->pc = this->pc + len;
+// }
+
+void Simulator::issue() {
   if (this->pc % 2 != 0) {
     this->panic("Illegal PC 0x%x!\n", this->pc);
   }
-
   uint32_t inst = this->memory->getInt(this->pc);
+  if(inst==0)
+    exit(0);
   uint32_t len = 4;
 
   if (this->verbose) {
     printf("Fetched instruction 0x%.8x at address 0x%lx\n", inst, this->pc);
   }
-
-  this->fRegNew.bubble = false;
-  this->fRegNew.stall = false;
-  this->fRegNew.inst = inst;
-  this->fRegNew.len = len;
-  this->fRegNew.pc = this->pc;
-  this->pc = this->pc + len;
-}
-
-void Simulator::decode() {
-  if (this->fReg.stall) {
-    if (verbose) {
-      printf("Decode: Stall\n");
-    }
-    this->pc = this->pc - 4;
-    return;
-  }
-  if (this->fReg.bubble || this->fReg.inst == 0) {
-    if (verbose) {
-      printf("Decode: Bubble\n");
-    }
-    this->dRegNew.bubble = true;
-    return;
-  }
+  
+  // if (this->fReg.stall) {
+  //   if (verbose) {
+  //     printf("Decode: Stall\n");
+  //   }
+  //   this->pc = this->pc - 4;
+  //   return;
+  // }
+  // if (this->fReg.bubble || this->fReg.inst == 0) {
+  //   if (verbose) {
+  //     printf("Decode: Bubble\n");
+  //   }
+  //   this->dRegNew.bubble = true;
+  //   return;
+  // }
 
   std::string instname = "";
   std::string inststr = "";
   std::string deststr, op1str, op2str, offsetstr;
   Inst insttype = Inst::UNKNOWN;
-  uint32_t inst = this->fReg.inst;
   int64_t op1 = 0, op2 = 0, offset = 0; // op1, op2 and offset are values
   RegId dest = 0, reg1 = -1, reg2 = -1; // reg1 and reg2 are operands
 
   // Reg for 32bit instructions
-  if (this->fReg.len == 4) // 32 bit instruction
+  if (len == 4) // 32 bit instruction
   {
     uint32_t opcode = inst & 0x7F;
     uint32_t funct3 = (inst >> 12) & 0x7;
@@ -232,8 +309,6 @@ void Simulator::decode() {
 
     switch (opcode) {
     case OP_REG:
-      op1 = this->reg[rs1];
-      op2 = this->reg[rs2];
       reg1 = rs1;
       reg2 = rs2;
       dest = rd;
@@ -332,7 +407,6 @@ void Simulator::decode() {
       inststr = instname + " " + deststr + "," + op1str + "," + op2str;
       break;
     case OP_IMM:
-      op1 = this->reg[rs1];
       reg1 = rs1;
       op2 = imm_i;
       dest = rd;
@@ -421,7 +495,6 @@ void Simulator::decode() {
       inststr = instname + " " + deststr + "," + op1str;
       break;
     case OP_JALR:
-      op1 = this->reg[rs1];
       reg1 = rs1;
       op2 = imm_i;
       dest = rd;
@@ -433,8 +506,6 @@ void Simulator::decode() {
       inststr = instname + " " + deststr + "," + op1str + "," + op2str;
       break;
     case OP_BRANCH:
-      op1 = this->reg[rs1];
-      op2 = this->reg[rs2];
       reg1 = rs1;
       reg2 = rs2;
       offset = imm_sb;
@@ -472,8 +543,6 @@ void Simulator::decode() {
       inststr = instname + " " + op1str + "," + op2str + "," + offsetstr;
       break;
     case OP_STORE:
-      op1 = this->reg[rs1];
-      op2 = this->reg[rs2];
       reg1 = rs1;
       reg2 = rs2;
       offset = imm_s;
@@ -503,7 +572,6 @@ void Simulator::decode() {
       inststr = instname + " " + op2str + "," + offsetstr + "(" + op1str + ")";
       break;
     case OP_LOAD:
-      op1 = this->reg[rs1];
       reg1 = rs1;
       op2 = imm_i;
       offset = imm_i;
@@ -547,8 +615,6 @@ void Simulator::decode() {
     case OP_SYSTEM:
       if (funct3 == 0x0 && funct7 == 0x000) {
         instname = "ecall";
-        op1 = this->reg[REG_A0];
-        op2 = this->reg[REG_A7];
         reg1 = REG_A0;
         reg2 = REG_A7;
         dest = REG_A0;
@@ -560,7 +626,6 @@ void Simulator::decode() {
       inststr = instname;
       break;
     case OP_IMM32:
-      op1 = this->reg[rs1];
       reg1 = rs1;
       op2 = imm_i;
       dest = rd;
@@ -593,12 +658,9 @@ void Simulator::decode() {
       inststr = instname + " " + deststr + "," + op1str + "," + op2str;
       break;
     case OP_32: {
-      op1 = this->reg[rs1];
-      op2 = this->reg[rs2];
       reg1 = rs1;
       reg2 = rs2;
       dest = rd;
-
       uint32_t temp = (inst >> 25) & 0x7F; // 32bit funct7 field
       switch (funct3) {
       case 0x0:
@@ -640,7 +702,7 @@ void Simulator::decode() {
     }
 
     char buf[4096];
-    sprintf(buf, "0x%lx: %s\n", this->fReg.pc, inststr.c_str());
+    sprintf(buf, "0x%lx: %s\n", this->pc, inststr.c_str());
     this->history.instRecord.push_back(buf);
 
     if (verbose) {
@@ -650,69 +712,160 @@ void Simulator::decode() {
     this->panic(
         "Current implementation does not support 16bit RV64C instructions!\n");
   }
-
+  // to do
+  // this->pc = this->pc + len;
   if (instname != INSTNAME[insttype]) {
     this->panic("Unmatch instname %s with insttype %d\n", instname.c_str(),
                 insttype);
   }
-
+  //tomasulo handle
+  FunctionalUnit fu=getFunctionalUnit(insttype);
+  if(!this->ts.isReorderBufferFree()||!this->ts.isReservationStationFree(fu))
+    return;
+  uint32_t entry=this->ts.newROBentry(insttype);
+  this->ts.newRSentry(insttype,entry);
+  uint32_t qj=0;
+  uint32_t qk=0;
+  uint32_t h;
   bool predictedBranch = false;
-  if (isBranch(insttype)) {
-    predictedBranch = this->branchPredictor->predict(this->fReg.pc, insttype,
-                                                     op1, op2, offset);
-    if (predictedBranch) {
-      this->predictedPC = this->fReg.pc + offset;
-      this->anotherPC = this->fReg.pc + 4;
-      this->fRegNew.bubble = true;
-    } else {
-      this->anotherPC = this->fReg.pc + offset;
+  if(isBranch(insttype)||isJump(insttype)){
+    this->fetchPasue=true;
+  }
+  if(reg1!=-1){
+    if(this->ts.registerStatus[reg1].busy){
+      h=this->ts.registerStatus[reg1].entry;
+      for(int i=0;i<this->ts.reorderBuffer.size();i++){
+        if(this->ts.reorderBuffer[i].entry==h){
+          if(this->ts.reorderBuffer[i].ready){
+            op1=this->ts.reorderBuffer[i].value;
+            qj=0;
+          }
+          else{
+            qj=h;
+          }
+        }
+      }
+    }
+    else{
+      op1=this->reg[reg1];
+      qj=0;
     }
   }
 
-  this->dRegNew.stall = false;
-  this->dRegNew.bubble = false;
-  this->dRegNew.rs1 = reg1;
-  this->dRegNew.rs2 = reg2;
-  this->dRegNew.pc = this->fReg.pc;
-  this->dRegNew.inst = insttype;
-  this->dRegNew.predictedBranch = predictedBranch;
-  this->dRegNew.dest = dest;
-  this->dRegNew.op1 = op1;
-  this->dRegNew.op2 = op2;
-  this->dRegNew.offset = offset;
+  if(reg2!=-1){
+  if(this->ts.registerStatus[reg2].busy){
+    h=this->ts.registerStatus[reg2].entry;
+    for(int i=0;i<this->ts.reorderBuffer.size();i++){
+      if(this->ts.reorderBuffer[i].entry==h){
+        if(this->ts.reorderBuffer[i].ready){
+          op2=this->ts.reorderBuffer[i].value;
+          qk=0;
+        }
+        else{
+          qk=h;
+        }
+      }
+    }
+  }
+  else{
+    op2=this->reg[reg2];
+    qk=0;
+    }
+  }
+  this->ts.setRegj(fu,entry,op1,qj);
+  this->ts.setRegk(fu,entry,op2,qk);
+  if(isWriteReg(insttype)){
+    this->ts.setRegd(fu,entry,dest);
+  }
+  this->ts.setPC(fu,entry,this->pc);
+  this->ts.setOffset(fu,entry,offset);
+
+  this->pc = this->pc + len;
+  // if (isBranch(insttype)) {
+  //   predictedBranch = this->branchPredictor->predict(this->pc, insttype,
+  //                                                    op1, op2, offset);
+  //   if (predictedBranch) {
+  //     this->predictedPC = this->pc + offset;
+  //     this->anotherPC = this->pc + 4;
+  //     this->fRegNew.bubble = true;
+  //   } else {
+  //     this->anotherPC = this->fReg.pc + offset;
+  //   }
+  // }
 }
 
-void Simulator::excecute() {
-  if (this->dReg.stall) {
-    if (verbose) {
-      printf("Execute: Stall\n");
-    }
-    this->eRegNew.bubble = true;
-    return;
-  }
-  if (this->dReg.bubble) {
-    if (verbose) {
-      printf("Execute: Bubble\n");
-    }
-    this->eRegNew.bubble = true;
-    return;
-  }
-
+void Simulator::excecute(FunctionalUnit fu,uint32_t entry) {
   if (verbose) {
-    printf("Execute: %s\n", INSTNAME[this->dReg.inst]);
+    printf("Execute: %d\n",entry);
   }
 
-  this->history.instCount++;
+  Inst inst;
+  int64_t op1 ;
+  int64_t op2 ;
+  int64_t offset ;
+  bool predictedBranch;
 
-  Inst inst = this->dReg.inst;
-  int64_t op1 = this->dReg.op1;
-  int64_t op2 = this->dReg.op2;
-  int64_t offset = this->dReg.offset;
-  bool predictedBranch = this->dReg.predictedBranch;
-
-  uint64_t dRegPC = this->dReg.pc;
+  uint64_t dRegPC ;
   bool writeReg = false;
-  RegId destReg = this->dReg.dest;
+  RegId destReg ;
+  switch (fu)
+  {
+  case ALUUNIT:
+    for(int i=0;i<this->ts.aluReservationStation.size();i++){
+      if(this->ts.aluReservationStation[i].entry==entry){
+        inst=this->ts.aluReservationStation[i].instruction;
+        op1=this->ts.aluReservationStation[i].vj;
+        op2=this->ts.aluReservationStation[i].vk;
+        offset=this->ts.aluReservationStation[i].address;
+        destReg=this->ts.aluReservationStation[i].destination;
+        dRegPC=this->ts.aluReservationStation[i].PC;
+        this->ts.aluReservationStation.erase(this->ts.aluReservationStation.begin()+i);
+      }
+    }
+    break;
+  case MEMUNIT:
+    for(int i=0;i<this->ts.memReservationStation.size();i++){
+      if(this->ts.memReservationStation[i].entry==entry){
+        inst=this->ts.memReservationStation[i].instruction;
+        op1=this->ts.memReservationStation[i].vj;
+        op2=this->ts.memReservationStation[i].vk;
+        offset=this->ts.memReservationStation[i].address;
+        destReg=this->ts.memReservationStation[i].destination;
+        dRegPC=this->ts.memReservationStation[i].PC;
+        this->ts.memReservationStation.erase(this->ts.memReservationStation.begin()+i);
+      }
+    }
+    break;
+  case MULUNIT:
+    for(int i=0;i<this->ts.mulReservationStation.size();i++){
+      if(this->ts.mulReservationStation[i].entry==entry){
+        inst=this->ts.mulReservationStation[i].instruction;
+        op1=this->ts.mulReservationStation[i].vj;
+        op2=this->ts.mulReservationStation[i].vk;
+        offset=this->ts.mulReservationStation[i].address;
+        destReg=this->ts.mulReservationStation[i].destination;
+        dRegPC=this->ts.mulReservationStation[i].PC;
+        this->ts.mulReservationStation.erase(this->ts.mulReservationStation.begin()+i);
+      }
+    }
+    break;
+  case DIVUNIT:
+    for(int i=0;i<this->ts.divReservationStation.size();i++){
+      if(this->ts.divReservationStation[i].entry==entry){
+        inst=this->ts.divReservationStation[i].instruction;
+        op1=this->ts.divReservationStation[i].vj;
+        op2=this->ts.divReservationStation[i].vk;
+        offset=this->ts.divReservationStation[i].address;
+        destReg=this->ts.divReservationStation[i].destination;
+        dRegPC=this->ts.divReservationStation[i].PC;
+        this->ts.divReservationStation.erase(this->ts.divReservationStation.begin()+i);
+      }
+    }
+    break;
+  default:
+    break;
+  }
+  this->history.instCount++;
   int64_t out = 0;
   bool writeMem = false;
   bool readMem = false;
@@ -933,140 +1086,46 @@ void Simulator::excecute() {
     writeReg = true;
     break;
   default:
-    this->panic("Unknown instruction type %d\n", inst);
+    this->panic("Unknown instruction type %u\n", inst);
   }
+  
+  // // Pipeline Related Code
+  // if (isBranch(inst)) {
+  //   if (predictedBranch == branch) {
+  //     this->history.predictedBranch++;
+  //   } else {
+  //     // Control Hazard Here
+  //   if (branch)
+  //       this->pc = dRegPC;
+  //   else
+  //     this->pc = this->dReg.pc + 4;
+  //   this->fRegNew.bubble = true;
+  //   this->dRegNew.bubble = true;
+  //   this->history.unpredictedBranch++;
+  //   this->history.controlHazardCount++;
+  //   }
+  //   // this->dReg.pc: fetch original inst addr, not the modified one
+  //   this->branchPredictor->update(this->dReg.pc, branch);
+  // }
 
-  // Pipeline Related Code
-  if (isBranch(inst)) {
-    if (predictedBranch == branch) {
-      this->history.predictedBranch++;
-    } else {
-      // Control Hazard Here
-    if (branch)
-        this->pc = dRegPC;
-    else
-      this->pc = this->dReg.pc + 4;
-    this->fRegNew.bubble = true;
-    this->dRegNew.bubble = true;
-    this->history.unpredictedBranch++;
-    this->history.controlHazardCount++;
-    }
-    // this->dReg.pc: fetch original inst addr, not the modified one
-    this->branchPredictor->update(this->dReg.pc, branch);
-  }
-  if (isJump(inst)) {
-    // Control hazard here
-    this->pc = dRegPC;
-    this->fRegNew.bubble = true;
-    this->dRegNew.bubble = true;
-    this->history.controlHazardCount++;
-  }
-  if (isReadMem(inst)) {
-    if (this->dRegNew.rs1 == destReg || this->dRegNew.rs2 == destReg) {
-      this->fRegNew.stall = 2;
-      this->dRegNew.stall = 2;
-      this->eRegNew.bubble = true;
-      this->history.cycleCount--;
-      this->history.memoryHazardCount++;
-    }
-  }
-
-  // inside the execute stage, there's ALU and other components
-  // latency analysis of each instruction inside execute stage
-  uint32_t lat = this->latency[getComponentUsed(inst)];
-  // stall the fetch & decode stage to reflect the latency
-  this->fRegNew.stall = std::max<uint32_t>(lat, this->fRegNew.stall);
-  this->dRegNew.stall = std::max<uint32_t>(lat, this->dRegNew.stall);
-
-  // Check for data hazard and forward data
-  if (writeReg && destReg != 0 && !isReadMem(inst)) {
-    if (this->dRegNew.rs1 == destReg) {
-      this->dRegNew.op1 = out;
-      this->executeWBReg = destReg;
-      this->executeWriteBack = true;
-      this->history.dataHazardCount++;
-      if (verbose)
-        printf("  Forward Data %s to Decode op1\n", REGNAME[destReg]);
-    }
-    if (this->dRegNew.rs2 == destReg) {
-      this->dRegNew.op2 = out;
-      this->executeWBReg = destReg;
-      this->executeWriteBack = true;
-      this->history.dataHazardCount++;
-      if (verbose)
-        printf("  Forward Data %s to Decode op2\n", REGNAME[destReg]);
-    }
-  }
-
-  this->eRegNew.bubble = false;
-  this->eRegNew.stall = false;
-  this->eRegNew.pc = dRegPC;
-  this->eRegNew.inst = inst;
-  this->eRegNew.op1 = op1; // for jalr
-  this->eRegNew.op2 = op2; // for store
-  this->eRegNew.writeReg = writeReg;
-  this->eRegNew.destReg = destReg;
-  this->eRegNew.out = out;
-  this->eRegNew.writeMem = writeMem;
-  this->eRegNew.readMem = readMem;
-  this->eRegNew.readSignExt = readSignExt;
-  this->eRegNew.memLen = memLen;
-  this->eRegNew.branch = branch;
-}
-
-void Simulator::memoryAccess() {
-  if (this->eReg.stall) {
-    if (verbose) {
-      printf("Memory Access: Stall\n");
-    }
-    return;
-  }
-  if (this->eReg.bubble) {
-    if (verbose) {
-      printf("Memory Access: Bubble\n");
-    }
-    this->mRegNew.bubble = true;
-    return;
-  }
-
-  uint64_t eRegPC = this->eReg.pc;
-  Inst inst = this->eReg.inst;
-  bool writeReg = this->eReg.writeReg;
-  RegId destReg = this->eReg.destReg;
-  int64_t op1 = this->eReg.op1; // for jalr
-  int64_t op2 = this->eReg.op2; // for store
-  int64_t out = this->eReg.out;
-  bool writeMem = this->eReg.writeMem;
-  bool readMem = this->eReg.readMem;
-  bool readSignExt = this->eReg.readSignExt;
-  uint32_t memLen = this->eReg.memLen;
+  // if(isBranch(inst)){
+  //   if(branch){
+  //     this->pc=dRegPC;
+  //     this->fetchPasue=false;
+  //   }
+  //   else{
+  //     this->fetchPasue=false;
+  //   }
+  // }
+  // if (isJump(inst)) {
+  //   // Control hazard here
+  //   this->pc = dRegPC;
+  //   this->fetchPasue=false;
+  // }
 
   bool good = true;
   uint32_t cycles = 0;
-
-  if (writeMem) {
-    switch (memLen) {
-    case 1:
-      good = this->memory->setByte(out, op2, &cycles);
-      break;
-    case 2:
-      good = this->memory->setShort(out, op2, &cycles);
-      break;
-    case 4:
-      good = this->memory->setInt(out, op2, &cycles);
-      break;
-    case 8:
-      good = this->memory->setLong(out, op2, &cycles);
-      break;
-    default:
-      this->panic("Unknown memLen %d\n", memLen);
-    }
-  }
-
-  if (!good) {
-    this->panic("Invalid Mem Access!\n");
-  }
-
+  int64_t tttt=out;
   if (readMem) {
     switch (memLen) {
     case 1:
@@ -1100,125 +1159,172 @@ void Simulator::memoryAccess() {
     default:
       this->panic("Unknown memLen %d\n", memLen);
     }
+    // printf("get address=%x  value=%d\n",tttt,out);
   }
 
-  if (this->fReg.stall == datamem_stall_lock) 
-    this->fReg.stall = std::max<uint32_t>(datamem_lat_lower_bound, cycles);
-  if (this->dReg.stall == datamem_stall_lock)
-    this->dReg.stall = std::max<uint32_t>(datamem_lat_lower_bound, cycles);
+  for(int i=0;i<this->ts.reorderBuffer.size();i++){
+    if(this->ts.reorderBuffer[i].entry==entry){
+      if(isStoreMem(inst)){
+        this->ts.reorderBuffer[i].address=out;
+        this->ts.reorderBuffer[i].period=writebackedPeriod;
+        this->ts.reorderBuffer[i].ready=true;
+        this->ts.reorderBuffer[i].busy=false;
+        this->ts.reorderBuffer[i].value=op2;
+      }
+      else if(isBranch(inst)){
+        if(branch)
+          this->ts.reorderBuffer[i].address=dRegPC;
+        else
+          this->ts.reorderBuffer[i].address=this->pc;
+        this->ts.reorderBuffer[i].period=writebackedPeriod;
+        this->ts.reorderBuffer[i].ready=true;
+        this->ts.reorderBuffer[i].busy=false;
+        this->ts.reorderBuffer[i].value=out;
+      }
+      else if(isJump(inst)){
+        this->ts.reorderBuffer[i].address=dRegPC;
+        this->ts.reorderBuffer[i].period=writebackedPeriod;
+        this->ts.reorderBuffer[i].ready=true;
+        this->ts.reorderBuffer[i].busy=false;
+        this->ts.reorderBuffer[i].value=out;
+      }
+      else{
+        this->ts.reorderBuffer[i].value=out;
+        this->ts.reorderBuffer[i].period=executePeriod;
+        this->ts.reorderBuffer[i].ready=false;
+        this->ts.reorderBuffer[i].busy=true;
+      } 
+    }
+  }
 
+}
+void Simulator::writeBack(uint32_t entry){
   if (verbose) {
-    printf("Memory Access: %s\n", INSTNAME[inst]);
+    printf("Write back: %d\n",entry);
   }
-
-  // Check for data hazard and forward data
-  if (writeReg && destReg != 0) {
-    if (this->dRegNew.rs1 == destReg) {
-      // Avoid overwriting recent values
-      if (this->executeWriteBack == false ||
-          (this->executeWriteBack && this->executeWBReg != destReg)) {
-        this->dRegNew.op1 = out;
-        this->memoryWriteBack = true;
-        this->memoryWBReg = destReg;
-        this->history.dataHazardCount++;
-        if (verbose)
-          printf("  Forward Data %s to Decode op1\n", REGNAME[destReg]);
-      }
-    }
-    if (this->dRegNew.rs2 == destReg) {
-      // Avoid overwriting recent values
-      if (this->executeWriteBack == false ||
-          (this->executeWriteBack && this->executeWBReg != destReg)) {
-        this->dRegNew.op2 = out;
-        this->memoryWriteBack = true;
-        this->memoryWBReg = destReg;
-        this->history.dataHazardCount++;
-        if (verbose)
-          printf("  Forward Data %s to Decode op2\n", REGNAME[destReg]);
-      }
-    }
-    // Corner case of forwarding mem load data to stalled decode reg
-    if (this->dReg.stall) {
-      if (this->dReg.rs1 == destReg) this->dReg.op1 = out;
-      if (this->dReg.rs2 == destReg) this->dReg.op2 = out;
-      this->memoryWriteBack = true;
-      this->memoryWBReg = destReg;
-      this->history.dataHazardCount++;
-      if (verbose)
-          printf("  Forward Data %s to Decode op2\n", REGNAME[destReg]);
+  RegId dest;
+  uint64_t value;
+  for(int i=0;i<this->ts.reorderBuffer.size();i++){
+    if(this->ts.reorderBuffer[i].entry==entry){
+      dest=this->ts.reorderBuffer[i].destination;
+      value=this->ts.reorderBuffer[i].value;
+      this->ts.reorderBuffer[i].period=writebackedPeriod;
+      this->ts.reorderBuffer[i].ready=true;
     }
   }
-
-  this->mRegNew.bubble = false;
-  this->mRegNew.stall = false;
-  this->mRegNew.pc = eRegPC;
-  this->mRegNew.inst = inst;
-  this->mRegNew.op1 = op1;
-  this->mRegNew.op2 = op2;
-  this->mRegNew.destReg = destReg;
-  this->mRegNew.writeReg = writeReg;
-  this->mRegNew.out = out;
+  for(int i=0;i<this->ts.aluReservationStation.size();i++){
+    if(this->ts.aluReservationStation[i].qj==entry){
+      this->ts.aluReservationStation[i].vj=value;
+      this->ts.aluReservationStation[i].qj=0;
+    }
+    if(this->ts.aluReservationStation[i].qk==entry){
+      this->ts.aluReservationStation[i].vk=value;
+      this->ts.aluReservationStation[i].qk=0;
+    }
+  }
+  for(int i=0;i<this->ts.memReservationStation.size();i++){
+    if(this->ts.memReservationStation[i].qj==entry){
+      this->ts.memReservationStation[i].vj=value;
+      this->ts.memReservationStation[i].qj=0;
+    }
+    if(this->ts.memReservationStation[i].qk==entry){
+      this->ts.memReservationStation[i].vk=value;
+      this->ts.memReservationStation[i].qk=0;
+    }
+  }
+  for(int i=0;i<this->ts.mulReservationStation.size();i++){
+    if(this->ts.mulReservationStation[i].qj==entry){
+      this->ts.mulReservationStation[i].vj=value;
+      this->ts.mulReservationStation[i].qj=0;
+    }
+    if(this->ts.mulReservationStation[i].qk==entry){
+      this->ts.mulReservationStation[i].vk=value;
+      this->ts.mulReservationStation[i].qk=0;
+    }
+  }
+  for(int i=0;i<this->ts.divReservationStation.size();i++){
+    if(this->ts.divReservationStation[i].qj==entry){
+      this->ts.divReservationStation[i].vj=value;
+      this->ts.divReservationStation[i].qj=0;
+    }
+    if(this->ts.divReservationStation[i].qk==entry){
+      this->ts.divReservationStation[i].vk=value;
+      this->ts.divReservationStation[i].qk=0;
+    }
+  }
+}
+void Simulator::commit(uint32_t entry)
+{
+  if (verbose) {
+    printf("Commit: %d\n",entry);
+  }
+  Inst inst;
+  RegId dest;
+  uint64_t op2;
+  uint64_t out;
+  uint32_t memLen;
+  for(int i=0;i<this->ts.reorderBuffer.size();i++){
+    if(this->ts.reorderBuffer[i].entry==entry){
+      inst=this->ts.reorderBuffer[i].instruction;
+      dest=this->ts.reorderBuffer[i].destination;
+      op2=this->ts.reorderBuffer[i].address;
+      out=this->ts.reorderBuffer[i].value;
+      this->ts.reorderBuffer.erase(this->ts.reorderBuffer.begin()+i);
+    }
+  }
+  if(isBranch(inst)||isJump(inst)){
+    this->fetchPasue=false;
+    this->pc=op2;
+  }
+  if(isStoreMem(inst)){
+    switch (inst)
+    {
+    case SB:
+      memLen = 1;
+      break;
+    case SH:
+      memLen = 2;
+      break;
+    case SW:
+      memLen = 4;
+      break;
+    case SD:
+      memLen = 8;
+      break;
+    }
+    bool good = true;
+    uint32_t cycles = 0;
+    // printf("set: address=%x value=%d\n",op2,out);
+    switch (memLen) {
+    case 1:
+      good = this->memory->setByte(op2, out, &cycles);
+      break;
+    case 2:
+      good = this->memory->setShort(op2, out, &cycles);
+      break;
+    case 4:
+      good = this->memory->setInt(op2, out, &cycles);
+      break;
+    case 8:
+      good = this->memory->setLong(op2, out, &cycles);
+      break;
+    default:
+      this->panic("Unknown memLen %d\n", memLen);
+    }
+    if (!good) {
+      this->panic("Invalid Mem Access!\n");
+    }
+  }
+  else if(isWriteReg(inst)){
+    // if(dest==REG_A0)
+    //   printf("a0=%d\n",out);
+    reg[dest]=out;
+    if(this->ts.registerStatus[dest].entry==entry){
+      this->ts.registerStatus[dest].busy=false;
+    }
+  }
 }
 
-void Simulator::writeBack() {
-  if (this->mReg.stall) {
-    if (verbose) {
-      printf("WriteBack: stall\n");
-    }
-    return;
-  }
-  if (this->mReg.bubble) {
-    if (verbose) {
-      printf("WriteBack: Bubble\n");
-    }
-    return;
-  }
-
-  if (verbose) {
-    printf("WriteBack: %s\n", INSTNAME[this->mReg.inst]);
-  }
-
-  if (this->mReg.writeReg && this->mReg.destReg != 0) {
-    // Check for data hazard and forward data
-    if (this->dRegNew.rs1 == this->mReg.destReg) {
-      // Avoid overwriting recent data
-      if (!this->executeWriteBack ||
-          (this->executeWriteBack &&
-           this->executeWBReg != this->mReg.destReg)) {
-        if (!this->memoryWriteBack ||
-            (this->memoryWriteBack &&
-             this->memoryWBReg != this->mReg.destReg)) {
-          this->dRegNew.op1 = this->mReg.out;
-          this->history.dataHazardCount++;
-          if (verbose)
-            printf("  Forward Data %s to Decode op1\n",
-                   REGNAME[this->mReg.destReg]);
-        }
-      }
-    }
-    if (this->dRegNew.rs2 == this->mReg.destReg) {
-      // Avoid overwriting recent data
-      if (!this->executeWriteBack ||
-          (this->executeWriteBack &&
-           this->executeWBReg != this->mReg.destReg)) {
-        if (!this->memoryWriteBack ||
-            (this->memoryWriteBack &&
-             this->memoryWBReg != this->mReg.destReg)) {
-          this->dRegNew.op2 = this->mReg.out;
-          this->history.dataHazardCount++;
-          if (verbose)
-            printf("  Forward Data %s to Decode op2\n",
-                   REGNAME[this->mReg.destReg]);
-        }
-      }
-    }
-
-    // Real Write Back
-    this->reg[this->mReg.destReg] = this->mReg.out;
-  }
-
-  // this->pc = this->mReg.pc;
-}
 
 int64_t Simulator::handleSystemCall(int64_t op1, int64_t op2) {
   int64_t type = op2; // reg a7
@@ -1272,6 +1378,49 @@ void Simulator::printInfo() {
       printf("\n");
   }
   printf("-----------------------------------\n");
+  printf("------------ ROB STATE ------------\n");
+  for(int i=0;i<this->ts.reorderBuffer.size();i++){
+    printf("%d: entry=%d,inst=%s,ready=%d,period=%d,busy=%d,execycle=%d,dest=%d,value=%d,address=%x\n",
+    i,this->ts.reorderBuffer[i].entry,INSTNAME[this->ts.reorderBuffer[i].instruction],
+    this->ts.reorderBuffer[i].ready,this->ts.reorderBuffer[i].period,this->ts.reorderBuffer[i].busy, this->ts.reorderBuffer[i].executeCycle,this->ts.reorderBuffer[i].destination,this->ts.reorderBuffer[i].value,this->ts.reorderBuffer[i].address);
+  }
+  printf("-----------------------------------\n");
+    printf("------------ ALURS STATE ------------\n");
+  for(int i=0;i<this->ts.aluReservationStation.size();i++){
+    printf("entry=%d,pc=%x,inst=%s,vj=%d,vk=%d,qj=%d,qk=%d,dest=%d,address=%x\n"
+    ,this->ts.aluReservationStation[i].entry,this->ts.aluReservationStation[i].PC,INSTNAME[this->ts.aluReservationStation[i].instruction],
+    this->ts.aluReservationStation[i].vj,this->ts.aluReservationStation[i].vk
+    ,this->ts.aluReservationStation[i].qj,this->ts.aluReservationStation[i].qk,this->ts.aluReservationStation[i].destination,this->ts.aluReservationStation[i].address);
+  }
+  printf("-----------------------------------\n");
+  printf("------------ MULRS STATE ------------\n");
+  for(int i=0;i<this->ts.mulReservationStation.size();i++){
+    printf("entry=%d,pc=%x,inst=%s,vj=%d,vk=%d,qj=%d,qk=%d,dest=%d,address=%x\n"
+    ,this->ts.mulReservationStation[i].entry,this->ts.mulReservationStation[i].PC,INSTNAME[this->ts.mulReservationStation[i].instruction],this->ts.mulReservationStation[i].vj,this->ts.mulReservationStation[i].vk
+    ,this->ts.mulReservationStation[i].qj,this->ts.mulReservationStation[i].qk,this->ts.mulReservationStation[i].destination,this->ts.mulReservationStation[i].address);
+
+  }
+  printf("-----------------------------------\n");
+    printf("------------ MEMRS STATE ------------\n");
+  for(int i=0;i<this->ts.memReservationStation.size();i++){
+    printf("entry=%d,pc=%x,inst=%s,vj=%d,vk=%d,qj=%d,qk=%d,dest=%d,address=%x\n"
+    ,this->ts.memReservationStation[i].entry,this->ts.memReservationStation[i].PC,INSTNAME[this->ts.memReservationStation[i].instruction],
+    this->ts.memReservationStation[i].vj,this->ts.memReservationStation[i].vk
+    ,this->ts.memReservationStation[i].qj,this->ts.memReservationStation[i].qk,this->ts.memReservationStation[i].destination,this->ts.memReservationStation[i].address);
+
+  }
+  printf("-----------------------------------\n");
+    printf("------------ DIVRS STATE ------------\n");
+  for(int i=0;i<this->ts.divReservationStation.size();i++){
+    printf("entry=%d,pc=%x,inst=%s,vj=%d,vk=%d,qj=%d,qk=%d,dest=%d,address=%x\n"
+    ,this->ts.divReservationStation[i].entry,this->ts.divReservationStation[i].PC,INSTNAME[this->ts.divReservationStation[i].instruction],
+    this->ts.divReservationStation[i].vj,this->ts.divReservationStation[i].vk
+    ,this->ts.divReservationStation[i].qj,this->ts.divReservationStation[i].qk,this->ts.divReservationStation[i].destination,this->ts.divReservationStation[i].address);
+
+  }
+  printf("-----------------------------------\n");
+  printf("\n\n\n\n\n\n\n");
+
 }
 
 void Simulator::printStatistics() {
@@ -1308,7 +1457,17 @@ std::string Simulator::getRegInfoStr() {
     }
   }
   str += "-----------------------------------\n";
-
+  str += "------------ TS STATE ------------\n";
+  sprintf(buf, "PC: 0x%lx\n", this->pc);
+  str += buf;
+  for(int i=0;i<this->ts.reorderBuffer.size();i++){
+    sprintf(buf,"%d: entry=%d,inst=%s,ready=%d,period=%d,execycle=%d,dest=%d,value=%d,address=%d",
+    i,this->ts.reorderBuffer[i].entry,INSTNAME[this->ts.reorderBuffer[i].instruction],
+    this->ts.reorderBuffer[i].ready,this->ts.reorderBuffer[i].period,this->ts.reorderBuffer[i].executeCycle,this->ts.reorderBuffer[i].destination,this->ts.reorderBuffer[i].value,this->ts.reorderBuffer[i].address);
+    str+=buf;
+    str+="\n";  
+  }
+  str += "-----------------------------------\n";
   return str;
 }
 
