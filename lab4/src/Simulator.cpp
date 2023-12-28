@@ -35,22 +35,6 @@ void Simulator::initStack(uint32_t baseaddr, uint32_t maxSize) {
 }
 
 void Simulator::simulate() {
-  // // Initialize pipeline registers
-  // memset(&this->fReg, 0, sizeof(this->fReg));
-  // memset(&this->fRegNew, 0, sizeof(this->fRegNew));
-  // memset(&this->dReg, 0, sizeof(this->dReg));
-  // memset(&this->dRegNew, 0, sizeof(this->dReg));
-  // memset(&this->eReg, 0, sizeof(this->eReg));
-  // memset(&this->eRegNew, 0, sizeof(this->eRegNew));
-  // memset(&this->mReg, 0, sizeof(this->mReg));
-  // memset(&this->mRegNew, 0, sizeof(this->mRegNew));
-
-  // // Insert Bubble to later pipeline stages
-  // fReg.bubble = true;
-  // dReg.bubble = true;
-  // eReg.bubble = true;
-  // mReg.bubble = true;
-
   // Main Simulation Loop
   struct snopEntry{
     instCompleteSchedule period;
@@ -137,6 +121,11 @@ void Simulator::simulate() {
         continue;
       if(this->ts.isOperationJReady(this->ts.memReservationStation[i].entry,MEMUNIT)&&
       this->ts.isNotStoreBeforeLoadInRS(this->ts.memReservationStation[i].entry)&&
+      this->ts.isStoreLoadSameAddress(this->ts.memReservationStation[i].entry)){
+        this->history.memoryHazardCount++;
+      }
+      if(this->ts.isOperationJReady(this->ts.memReservationStation[i].entry,MEMUNIT)&&
+      this->ts.isNotStoreBeforeLoadInRS(this->ts.memReservationStation[i].entry)&&
       !this->ts.isStoreLoadSameAddress(this->ts.memReservationStation[i].entry)){
         temSnopEntry.fu=MEMUNIT;
         temSnopEntry.entry=this->ts.memReservationStation[i].entry;
@@ -145,7 +134,7 @@ void Simulator::simulate() {
         break;
       }
     }
-    //to do ?????????????
+
     for(int i=0;i<this->ts.reorderBuffer.size();i++){
       if(this->ts.reorderBuffer[i].executeCycle==0){
         temSnopEntry.fu=MEMUNIT;
@@ -168,7 +157,39 @@ void Simulator::simulate() {
         break;
       }
     }
-
+    int flag=1;
+    if(!this->ts.aluReservationStation.empty()){
+      for(int i=0;i<snop.size();i++){
+        if(snop[i].fu==ALUUNIT&&(snop[i].period==issuedPeriod||snop[i].period==executePeriod))
+          flag=0;
+      }
+    }
+    this->history.dataHazardCount+=flag;
+    flag=1;
+    if(!this->ts.memReservationStation.empty()){
+      for(int i=0;i<snop.size();i++){
+        if(snop[i].fu==MEMUNIT&&(snop[i].period==issuedPeriod||snop[i].period==executePeriod))
+          flag=0;
+      }
+    }
+    this->history.dataHazardCount+=flag;
+    flag=1;
+    if(!this->ts.mulReservationStation.empty()){
+      for(int i=0;i<snop.size();i++){
+        if(snop[i].fu==MULUNIT&&(snop[i].period==issuedPeriod||snop[i].period==executePeriod))
+          flag=0;
+      }
+    }
+    this->history.dataHazardCount+=flag;
+    flag=1;
+    if(!this->ts.divReservationStation.empty()){
+      for(int i=0;i<snop.size();i++){
+        if(snop[i].fu==DIVUNIT&&(snop[i].period==issuedPeriod||snop[i].period==executePeriod))
+          flag=0;
+      }
+    }
+    this->history.dataHazardCount+=flag;
+    flag=1;
     if(!this->fetchPasue){
       this->issue();
     }
@@ -193,20 +214,9 @@ void Simulator::simulate() {
     
     snop.clear();
 
-    // THE EXECUTION ORDER of these functions are important!!!
-    // Changing them will introduce strange bugs
-    // this->fetch();
-    // this->decode();
-    // this->excecute();
-    // this->memoryAccess();
-    // this->writeBack();
 
-
-    // The Branch perdiction happens here to avoid strange bugs in branch prediction
-    // if (!this->dReg.bubble && !this->dReg.stall && !this->fReg.stall && this->dReg.predictedBranch) {
-    //   this->pc = this->predictedPC;
-    // }
-
+    if(this->fetchPasue)
+      this->history.controlHazardCount++;
     this->history.cycleCount++;
     this->history.regRecord.push_back(this->getRegInfoStr());
     if (this->history.regRecord.size() >= 100000) { // Avoid using up memory
@@ -230,25 +240,7 @@ void Simulator::simulate() {
   }
 }
 
-// void Simulator::fetch() {
-//   if (this->pc % 2 != 0) {
-//     this->panic("Illegal PC 0x%x!\n", this->pc);
-//   }
 
-//   uint32_t inst = this->memory->getInt(this->pc);
-//   uint32_t len = 4;
-
-//   if (this->verbose) {
-//     printf("Fetched instruction 0x%.8x at address 0x%lx\n", inst, this->pc);
-//   }
-
-//   this->fRegNew.bubble = false;
-//   this->fRegNew.stall = false;
-//   this->fRegNew.inst = inst;
-//   this->fRegNew.len = len;
-//   this->fRegNew.pc = this->pc;
-//   this->pc = this->pc + len;
-// }
 
 void Simulator::issue() {
   if (this->pc % 2 != 0) {
@@ -263,20 +255,7 @@ void Simulator::issue() {
     printf("Fetched instruction 0x%.8x at address 0x%lx\n", inst, this->pc);
   }
   
-  // if (this->fReg.stall) {
-  //   if (verbose) {
-  //     printf("Decode: Stall\n");
-  //   }
-  //   this->pc = this->pc - 4;
-  //   return;
-  // }
-  // if (this->fReg.bubble || this->fReg.inst == 0) {
-  //   if (verbose) {
-  //     printf("Decode: Bubble\n");
-  //   }
-  //   this->dRegNew.bubble = true;
-  //   return;
-  // }
+
 
   std::string instname = "";
   std::string inststr = "";
@@ -781,17 +760,7 @@ void Simulator::issue() {
   this->ts.setOffset(fu,entry,offset);
 
   this->pc = this->pc + len;
-  // if (isBranch(insttype)) {
-  //   predictedBranch = this->branchPredictor->predict(this->pc, insttype,
-  //                                                    op1, op2, offset);
-  //   if (predictedBranch) {
-  //     this->predictedPC = this->pc + offset;
-  //     this->anotherPC = this->pc + 4;
-  //     this->fRegNew.bubble = true;
-  //   } else {
-  //     this->anotherPC = this->fReg.pc + offset;
-  //   }
-  // }
+
 }
 
 void Simulator::excecute(FunctionalUnit fu,uint32_t entry) {
@@ -1089,39 +1058,7 @@ void Simulator::excecute(FunctionalUnit fu,uint32_t entry) {
     this->panic("Unknown instruction type %u\n", inst);
   }
   
-  // // Pipeline Related Code
-  // if (isBranch(inst)) {
-  //   if (predictedBranch == branch) {
-  //     this->history.predictedBranch++;
-  //   } else {
-  //     // Control Hazard Here
-  //   if (branch)
-  //       this->pc = dRegPC;
-  //   else
-  //     this->pc = this->dReg.pc + 4;
-  //   this->fRegNew.bubble = true;
-  //   this->dRegNew.bubble = true;
-  //   this->history.unpredictedBranch++;
-  //   this->history.controlHazardCount++;
-  //   }
-  //   // this->dReg.pc: fetch original inst addr, not the modified one
-  //   this->branchPredictor->update(this->dReg.pc, branch);
-  // }
 
-  // if(isBranch(inst)){
-  //   if(branch){
-  //     this->pc=dRegPC;
-  //     this->fetchPasue=false;
-  //   }
-  //   else{
-  //     this->fetchPasue=false;
-  //   }
-  // }
-  // if (isJump(inst)) {
-  //   // Control hazard here
-  //   this->pc = dRegPC;
-  //   this->fetchPasue=false;
-  // }
 
   bool good = true;
   uint32_t cycles = 0;
@@ -1187,6 +1124,13 @@ void Simulator::excecute(FunctionalUnit fu,uint32_t entry) {
         this->ts.reorderBuffer[i].ready=true;
         this->ts.reorderBuffer[i].busy=false;
         this->ts.reorderBuffer[i].value=out;
+      }
+      else if(isReadMem(inst)){
+        this->ts.reorderBuffer[i].value=out;
+        this->ts.reorderBuffer[i].period=executePeriod;
+        this->ts.reorderBuffer[i].ready=false;
+        this->ts.reorderBuffer[i].busy=true;
+        this->ts.reorderBuffer[i].executeCycle=cycles;
       }
       else{
         this->ts.reorderBuffer[i].value=out;
@@ -1429,10 +1373,6 @@ void Simulator::printStatistics() {
   printf("Number of Cycles: %u\n", this->history.cycleCount);
   printf("Avg Cycles per Instrcution: %.4f\n",
          (float)this->history.cycleCount / this->history.instCount);
-  printf("Branch Perdiction Accuacy: %.4f (Strategy: %s)\n",
-         (float)this->history.predictedBranch /
-             (this->history.predictedBranch + this->history.unpredictedBranch),
-         this->branchPredictor->strategyName().c_str());
   printf("Number of Control Hazards: %u\n",
          this->history.controlHazardCount);
   printf("Number of Data Hazards: %u\n", this->history.dataHazardCount);

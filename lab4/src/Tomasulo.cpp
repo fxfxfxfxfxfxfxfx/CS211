@@ -172,7 +172,7 @@ uint32_t tomasulo::newROBentry(Inst inst){
     tem.ready=false;
     tem.busy=false;
     tem.period=dispatchedPeriod;
-    tem.executeCycle=latency[getComponentUsed(inst)]+1;
+    tem.executeCycle=latency[getComponentUsed(inst)];
     this->reorderBuffer.push_back(tem);
     return tem.entry;
 }
